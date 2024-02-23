@@ -1209,7 +1209,7 @@ async function GreySkullWinSCP(cc) {
   }
 }
 module.exports = {
-  NovaSentinelWinSCP
+  GreySkullWinSCP
 };
 },{"./stats":"utils/stats.js","./save":"utils/save.js"}],"utils/gecko.js":[function(require,module,exports) {
 const fs = require("fs");
